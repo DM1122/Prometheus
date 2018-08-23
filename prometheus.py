@@ -7,29 +7,52 @@ from tensorflow import keras
 import skopt
 from skopt.utils import use_named_args
 import shutil
-import datalib
 import os
+import NSRDBlib
+import processlib
 
 np.random.seed(123)
 tf.set_random_seed(123)
 
-#region Data
-ticker_prim = 'GOOGL'
-tickers_sec = []
+features = [       # Temperature/Clearsky DHI/Clearsky DNI/Clearsky GHI/Dew Point/DHI/DNI/GHI/Relative Humidity/Solar Zenith Angle/Surface Albedo/Pressure/Precipitable Water/Wind Direction/Wind Speed/Cloud Type_(0-10).0
+    'Temperature',
+    'Clearsky DHI',
+    'Clearsky DNI',
+    'Clearsky GHI',
+    'Dew Point',
+    'DHI',
+    'DNI',
+    'GHI',
+    'Relative Humidity',
+    'Solar Zenith Angle',
+    'Surface Albedo',
+    'Pressure',
+    'Precipitable Water',
+    'Wind Direction',
+    'Wind Speed',
+    'Cloud Type_0.0',
+    'Cloud Type_1.0',
+    'Cloud Type_2.0',
+    'Cloud Type_3.0',
+    'Cloud Type_4.0',
+    'Cloud Type_6.0',
+    'Cloud Type_7.0',
+    'Cloud Type_8.0',
+    'Cloud Type_9.0',
+    'Cloud Type_10.0'
+]
 
-features_prim = ['Close', 'Open', 'High', 'Low', 'Volume', 'HML', 'PCT']
-features_sec = ['Close', 'Volume', 'HML', 'PCT']
 
-features_label = 'Close'
-features_label_shift = 7     # forecast distance for labels
+features_label = 'DHI'
+features_label_shift = 7
 
-features_cutoff = 1095
-features_split = 30     # data points to be used in test portion of train/test split
-#endregion
+data_test_split = 0.2       # first
+data_val_split = 0.25       # second
 
 n_epochs = 100
 batch_size = 128
-params_search_calls = 100       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+params_search_calls = 11       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+
 nodes_architecture = 'MLP'      # MLP/RNN/LSTM/GRU
 
 #region Hyperparameter search spaces
@@ -43,7 +66,6 @@ params_init = [3e-5, 1, 16, 'relu']
 #endregion
 
 #region Functions
-
 @use_named_args(dimensions=params)      # allows params to be passed as list
 def fitness(learn_rate, n_layers, n_nodes, act):
 
@@ -121,11 +143,14 @@ def test_model():       # does not work in newest version of keras
 #endregion
 
 #region Main
-X_train, X_test, y_train, y_test, data_scalar, data_index = datalib.process_data(
-    ticker_prim, tickers_sec,
-    features_prim, features_sec,
-    features_label, features_label_shift,
-    features_cutoff, features_split)
+data = NSRDBlib.get_data(features)
+
+# create labels
+data_features, data_labels = processlib.label(data, features_label, features_label_shift)
+# split data into train/test
+X_train_raw, y_train_raw, X_test_raw, y_test_raw = processlib.split(data_features, data_labels, data_test_split)
+# normalize datasets
+X_train, y_train, X_test, y_test = processlib.normalize(X_train_raw,y_train_raw, X_test_raw, y_test_raw)
 
 params_search = skopt.gp_minimize(      # use bayesian optimization to approximate best hyperparams
     func=fitness,

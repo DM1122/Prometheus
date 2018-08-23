@@ -1,17 +1,17 @@
 import pandas as pd
-import numpy as np
 import os
 import requests
 
 api_key = 'hYEIjf5E7wn7xSMuKQxkCEQ8nZ0LwLisVLAyUKRV'
 api_user = 'David+Maranto'
 api_user_email = 'd.maranto1122@gmail.com'
-
 api_years = '2012, 2013, 2014, 2015, 2016'
 api_lon, api_lat = '-79.3832', '43.6532'        # Toronto
 api_interval = '60'     # 1hr
 api_utc = 'false'       # local time
 
+
+#region Functions
 def request_data():     # data will be sent via email
     url = 'http://developer.nrel.gov/api/solar/nsrdb_psm3_download.json?api_key={}'.format(api_key)
     payload = 'names={0}&interval={1}&utc={2}&full_name={3}&email={4}&wkt=POINT({5}%20{6})'.format(api_years, api_interval, api_utc, api_user, api_user_email, api_lon, api_lat)
@@ -22,7 +22,7 @@ def request_data():     # data will be sent via email
     response = requests.request('POST', url, data=payload, headers=headers)
     print(response.text)
 
-def process_data_raw():     # process and combine yearly data to comp
+def preprocess_data():     # process and combine yearly data to comp
     data = pd.DataFrame()
     for file in sorted(os.listdir('./data/raw/')):
         print(file)
@@ -42,6 +42,15 @@ def process_data_raw():     # process and combine yearly data to comp
     data.to_csv('./data/comp.csv')
     print('Success!')
 
+def get_data(features):
+    data = pd.read_csv('./data/comp.csv', header=0, index_col=0)
+    for col in list(data.columns.values):
+        if col not in features:
+            data.drop(columns=[col], inplace=True)
+
+    return data
+#endregion
 
 if __name__ == '__main__':
-    process_data_raw()
+    out = get_data(['Temperature', 'DHI'])
+    print(out.head())
