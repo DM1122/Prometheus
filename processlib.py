@@ -4,6 +4,7 @@ import sklearn
 from sklearn.model_selection import train_test_split as TrainTestSplit
 from sklearn.preprocessing import MinMaxScaler
 
+#region Functions
 def label(data, label, shift):
     data['Label'] = data[label].shift(-shift)       # create label col
     data.dropna(inplace=True)       # drop gap created by shift length
@@ -12,7 +13,6 @@ def label(data, label, shift):
     data_labels = data['Label']     # create labels df from labels col
 
     return data_features, data_labels
-
 
 def split(data_features, data_labels, split):
     X_tr, X_te, y_tr, y_te = TrainTestSplit(data_features, data_labels, shuffle=False, test_size=split)
@@ -23,13 +23,11 @@ def split(data_features, data_labels, split):
     X_te = np.array(X_te)
     y_te = np.array(y_te)
 
-    print(y_tr)
     # reshape labels 1D to 2D array
     y_tr = np.reshape(y_tr, [-1,1])     
     y_te = np.reshape(y_te, [-1,1])
 
     return X_tr, y_tr, X_te, y_te
-
 
 def normalize(X_tr, y_tr, X_te, y_te):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_tr)
@@ -50,4 +48,4 @@ def unormalize(data):       # untested
     data = scl.inverse_transform(data)
 
     return data
-
+#endregion

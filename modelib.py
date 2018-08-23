@@ -1,6 +1,18 @@
 import tensorflow as tf
 from tensorflow import keras
 
+#region Functions
+def create_model_linear(learn_rate, n_features):
+    model = keras.Sequential()
+
+    model.add(keras.layers.InputLayer(input_shape=(n_features, )))
+    model.add(keras.layers.Dense(units=1, activation='linear'))
+
+    optimizer = keras.optimizers.Adam(lr=learn_rate)
+    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+
+    return model
+
 def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features):
     model = keras.Sequential()
     
@@ -31,3 +43,4 @@ def create_model_rnn(learn_rate, n_layers, n_nodes, act, n_features):
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model
+#endregion

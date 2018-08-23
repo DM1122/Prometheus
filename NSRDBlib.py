@@ -10,7 +10,6 @@ api_lon, api_lat = '-79.3832', '43.6532'        # Toronto
 api_interval = '60'     # 1hr
 api_utc = 'false'       # local time
 
-
 #region Functions
 def request_data():     # data will be sent via email
     url = 'http://developer.nrel.gov/api/solar/nsrdb_psm3_download.json?api_key={}'.format(api_key)
@@ -52,5 +51,4 @@ def get_data(features):
 #endregion
 
 if __name__ == '__main__':
-    out = get_data(['Temperature', 'DHI'])
-    print(out.head())
+    preprocess_data()
