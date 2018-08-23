@@ -1,13 +1,13 @@
-import glob
 import numpy as np
 import matplotlib
 from matplotlib import pyplot as plt
+import modelib
 import tensorflow as tf
 from tensorflow import keras
 import skopt
 from skopt.utils import use_named_args
 import shutil
-import datalib as data
+import datalib
 import os
 
 np.random.seed(123)
@@ -30,6 +30,7 @@ features_split = 30     # data points to be used in test portion of train/test s
 n_epochs = 100
 batch_size = 128
 params_search_calls = 11        # must be >=11
+nodes_architecture = 'RNN'      # MLP/RNN/LSTM/GRU
 
 #region Hyperparameter search spaces
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
@@ -42,27 +43,18 @@ params_init = [3e-5, 1, 16, 'relu']
 #endregion
 
 #region Functions
-def create_model(learn_rate, n_layers, n_nodes, act):
-    model = keras.Sequential()
-    
-    model.add(keras.layers.InputLayer(input_shape=(len(X_train[0]),)))
-
-    for i in range(n_layers):
-        model.add(keras.layers.Dense(units=n_nodes, activation=act, name='layer_dense_{}'.format(i+1)))
-    
-    model.add(keras.layers.Dense(units=1, activation='linear', name='layer_output'))
-
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
-
-    return model
 
 @use_named_args(dimensions=params)      # allows params to be passed as list
 def fitness(learn_rate, n_layers, n_nodes, act):
 
     log_dir = './logs/lr_{0:0e}_layers_{1}_nodes_{2}_{3}/'.format(learn_rate, n_layers, n_nodes, act)
 
-    model = create_model(learn_rate, n_layers, n_nodes, act)
+    if nodes_architecture == 'MLP':
+        model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, len(X_test[0]))
+    elif nodes_architecture == 'RNN':
+        model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, len(X_test[0]))
+    else:
+        raise ValueError('Invalid model type {}'.format(model_type))
 
     print('##################################')
     print('Training new model:')
@@ -129,7 +121,7 @@ def test_model():       # does not work in newest version of keras
 #endregion
 
 #region Main
-X_train, X_test, y_train, y_test, data_scalar, data_index = data.process_data(
+X_train, X_test, y_train, y_test, data_scalar, data_index = datalib.process_data(
     ticker_prim, tickers_sec,
     features_prim, features_sec,
     features_label, features_label_shift,

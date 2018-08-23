@@ -76,6 +76,13 @@ def process_data(ticker_prim, tickers_sec, features_prim, features_sec, label, s
 
     return X_tr, X_te, y_tr, y_te, y_scl, index
 
+def reshape_sequence_data(X, y, look_back=7):
+    X_reshaped, y_reshaped = [], []
+    for i in range(len(X) - look_back):
+        X_reshaped.append()
+
+    return np.array(X_reshaped), np.array(y_reshaped)
+
 def unprocess_data(out_train, out_test, y_train, y_test, label, scl, index):
 
     # index split
