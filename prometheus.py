@@ -29,12 +29,12 @@ features_split = 30     # data points to be used in test portion of train/test s
 
 n_epochs = 100
 batch_size = 128
-params_search_calls = 11        # must be >=11
-nodes_architecture = 'RNN'      # MLP/RNN/LSTM/GRU
+params_search_calls = 100       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+nodes_architecture = 'MLP'      # MLP/RNN/LSTM/GRU
 
 #region Hyperparameter search spaces
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
-layers_space = skopt.space.Integer(low=1, high=5, name='n_layers')
+layers_space = skopt.space.Integer(low=1, high=8, name='n_layers')
 nodes_space = skopt.space.Integer(low=4, high=512, name='n_nodes')
 act_space = skopt.space.Categorical(categories=['relu'], name='act')
 
@@ -126,8 +126,6 @@ X_train, X_test, y_train, y_test, data_scalar, data_index = datalib.process_data
     features_prim, features_sec,
     features_label, features_label_shift,
     features_cutoff, features_split)
-
-#loss_best = 100     # initial value of best percentage (to be reduced)
 
 params_search = skopt.gp_minimize(      # use bayesian optimization to approximate best hyperparams
     func=fitness,
