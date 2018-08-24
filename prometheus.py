@@ -44,14 +44,15 @@ features = [       # Temperature/Clearsky DHI/Clearsky DNI/Clearsky GHI/Dew Poin
 features_label = 'DHI'
 features_label_shift = 24       # hourly resolution
 
-learn_rate = 0.000009528776
-nodes_architecture = 'MLP'      # LN/MLP/RNN/LSTM/GRU
-n_layers = 1
-n_nodes = 306
+learn_rate = 0.0003
+model_type = 'RNN'      # LN/MLP/RNN/LSTM/GRU
+n_layers = 2
+n_nodes = 10
 act = 'relu'
 
-n_epochs = 100
+n_epochs = 3
 batch_size = 128
+sequence_length = 168
 
 split_test = 0.2       # first
 split_val = 0.25       # second
@@ -71,10 +72,10 @@ def predict_model():
     data_forecast = processlib.unprocess(output, y_test)
 
     matplotlib.style.use('classic')
-    fig = plt.figure('{0} Output: {1}'.format(nodes_architecture,features_label))
+    fig = plt.figure('{0} Output: {1}'.format(model_type,features_label))
     ax1 = fig.add_subplot(1,1,1)
     ax1.set_title('Testing')
-    
+
     data_forecast.plot(kind='line', ax=ax1)
     plt.show()
 #endregion
@@ -85,18 +86,27 @@ data_features, data_labels = processlib.label(data, features_label, features_lab
 X_train_raw, y_train_raw, X_test_raw, y_test_raw = processlib.split(data_features, data_labels, split_test)        # split data into train/test
 X_train, y_train, X_test, y_test = processlib.normalize(X_train_raw,y_train_raw, X_test_raw, y_test_raw)        # normalize datasets
 
+if model_type == 'RNN' or model_type == 'LSTM' or model_type == 'GRU':      # reshape data by sequence length
+    X_train = processlib.reshape(X_train, sequence_length)
+    y_train = processlib.reshape(y_train, sequence_length)
+    X_test = processlib.reshape(X_test, sequence_length)
+    y_test = processlib.reshape(y_test, sequence_length)
+
 print('Commencing Prometheus model generation...')
-if nodes_architecture == 'LN':
-    model = modelib.create_model_linear(learn_rate, len(X_test[0]))
-elif nodes_architecture == 'MLP':
-    model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, len(X_test[0]))
-elif nodes_architecture == 'RNN':
-    model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, len(X_test[0]))
+if model_type == 'LN':
+    model = modelib.create_model_linear(learn_rate, X_test.shape[0])
+    print(model.summary())
+elif model_type == 'MLP':
+    model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_test.shape[1])
+    print(model.summary())
+elif model_type == 'RNN':
+    model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, X_test.shape[1])
 else:
-    raise ValueError('Invalid model type {}'.format(nodes_architecture))
+    raise ValueError('Invalid model type {}'.format(model_type))
+
 
 log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-log_dir = './logs/{0}({1})_{2}_layers({3})_nodes({4})/'.format(log_date,os.path.basename(__file__),nodes_architecture,n_layers,n_nodes)
+log_dir = './logs/{0}({1})_{2}_layers({3})_nodes({4})/'.format(log_date,os.path.basename(__file__),model_type,n_layers,n_nodes)
 callback_log = keras.callbacks.TensorBoard(
     log_dir=log_dir,
     histogram_freq=0,       # not working currently
@@ -122,7 +132,7 @@ time_elapsed = time_end - time_start
 
 print('Model training completed!')
 print("Validation Loss: {0:.2%}".format(history.history['val_loss'][-1]))
-print('Elapsed time: {}'.format(time_elapsed))
+print('Elapsed time: {0:.2}sec'.format(time_elapsed))
 
 test_model()
 predict_model()
