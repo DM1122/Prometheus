@@ -45,7 +45,7 @@ features_label = 'DHI'
 features_label_shift = 24       # hourly resolution
 
 learn_rate = 0.0003
-model_type = 'RNN'      # LN/MLP/RNN/LSTM/GRU
+model_type = 'GRU'      # LN/MLP/RNN/LSTM/GRU
 n_layers = 2
 n_nodes = 10
 act = 'relu'
@@ -94,13 +94,17 @@ if model_type == 'RNN' or model_type == 'LSTM' or model_type == 'GRU':      # re
 
 print('Commencing Prometheus model generation...')
 if model_type == 'LN':
-    model = modelib.create_model_linear(learn_rate, X_test.shape[0])
+    model = modelib.create_model_linear(learn_rate, X_train.shape[0])
     print(model.summary())
 elif model_type == 'MLP':
-    model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_test.shape[1])
+    model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_train.shape[1])
     print(model.summary())
 elif model_type == 'RNN':
-    model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, X_test.shape[1])
+    model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, X_train.shape[2], X_train.shape[1])
+elif model_type == 'LSTM':
+    model = modelib.create_model_lstm(learn_rate, n_layers, n_nodes, act)
+elif model_type == 'GRU':
+    model = modelib.create_model_lstm(learn_rate, n_layers, n_nodes, act)
 else:
     raise ValueError('Invalid model type {}'.format(model_type))
 
