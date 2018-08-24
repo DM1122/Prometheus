@@ -43,9 +43,40 @@ def normalize(X_tr, y_tr, X_te, y_te):
 
     return X_tr, y_tr, X_te, y_te
 
-def unormalize(data):       # untested
-    print(scl)
-    data = scl.inverse_transform(data)
+def unprocess(out_raw, y_raw):       # untested
+    
+    out = pd.DataFrame(scl.inverse_transform(out_raw), columns=['Output'])
+    y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
 
-    return data
+    data_forecast = pd.concat([out, y], axis=1, sort=False)
+    data_forecast.index.names = ['Index']
+
+    print(data_forecast)
+    return data_forecast
 #endregion
+
+# def unprocess_data(out_train, out_test, y_train, y_test, label, scl, index):
+
+#     # index split
+#     index_train = index.loc[:len(out_train)-1,:]
+#     index_test = index.loc[len(out_train):,:]
+#     index_test.reset_index(drop=True, inplace=True)     # reset sliced index to start at 0
+
+#     # output unproccessing
+#     out_train_real = pd.DataFrame(scl.inverse_transform(out_train), columns=['Prediction'])
+#     out_test_real = pd.DataFrame(scl.inverse_transform(out_test), columns=['Prediction'])
+    
+#     # labels unprocessing
+#     y_train_real = pd.DataFrame(scl.inverse_transform(y_train), columns=[label])
+#     y_test_real = pd.DataFrame(scl.inverse_transform(y_test), columns=[label])
+
+#     # forecast comp
+#     forecast_train = pd.concat([index_train, y_train_real, out_train_real], axis=1, sort=True)
+#     forecast_train.set_index('index', drop=True, inplace=True)
+#     forecast_train.index.names = ['Date']
+
+#     forecast_test = pd.concat([index_test, y_test_real, out_test_real], axis=1, sort=True)
+#     forecast_test.set_index('index', drop=True, inplace=True)
+#     forecast_test.index.names = ['Date']
+
+#     return forecast_train, forecast_test

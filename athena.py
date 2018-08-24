@@ -43,14 +43,14 @@ features = [       # Temperature/Clearsky DHI/Clearsky DNI/Clearsky GHI/Dew Poin
     'Cloud Type_10.0'
 ]
 features_label = 'DHI'
-features_label_shift = 7
+features_label_shift = 24       # hourly resolution
 
 split_test = 0.2       # first
 split_val = 0.25       # second
 
 n_epochs = 100
 batch_size = 128
-params_search_calls = 11       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+params_search_calls = 500       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
 
 nodes_architecture = 'MLP'      # LN/MLP/RNN/LSTM/GRU
 #endregion
@@ -112,7 +112,7 @@ def fitness(learn_rate, n_layers, n_nodes, act):
     
     del model
     keras.backend.clear_session()
-    
+
     return loss
 
 def update_best_model(model, loss, log_dir):
@@ -141,7 +141,7 @@ def update_best_model(model, loss, log_dir):
         shutil.rmtree(log_dir)      # delete current log
 
 def test_model():       # does not work in current version of keras
-    print('Testing model:')
+    print('Testing model...')
     model = keras.models.load_model('./models/model.keras')
     result = model.evaluate(x=X_test, y=y_test)
     for name, value in zip(model.metrics_names, result):
@@ -163,6 +163,7 @@ data_features, data_labels = processlib.label(data, features_label, features_lab
 X_train_raw, y_train_raw, X_test_raw, y_test_raw = processlib.split(data_features, data_labels, split_test)        # split data into train/test
 X_train, y_train, X_test, y_test = processlib.normalize(X_train_raw,y_train_raw, X_test_raw, y_test_raw)        # normalize datasets
 
+print('Commencing Athena hyperparameter optimization...')
 params_search = skopt.gp_minimize(      # bayesian optimization
     func=fitness,
     dimensions=params,
