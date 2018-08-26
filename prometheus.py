@@ -45,12 +45,12 @@ features_label = 'DHI'
 features_label_shift = 24       # hourly resolution
 
 learn_rate = 0.0003
-model_type = 'GRU'      # LN/MLP/RNN/LSTM/GRU
-n_layers = 2
-n_nodes = 10
+model_type = 'RNN'      # LN/MLP/RNN/LSTM/GRU
+n_layers = 1
+n_nodes = 64
 act = 'relu'
 
-n_epochs = 3
+n_epochs = 100
 batch_size = 128
 sequence_length = 168
 
