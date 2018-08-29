@@ -46,6 +46,7 @@ def create_model_rnn(learn_rate, n_layers, n_nodes, act, n_features, sequence_le
 
     return model
 
+
 def create_model_lstm(learn_rate, n_layers, n_nodes, act):
     model = keras.Sequential()
 

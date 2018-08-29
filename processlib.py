@@ -57,6 +57,11 @@ def reshape(data_raw, look_back):
     return data
 
 def unprocess(out_raw, y_raw):       # untested
+    if out_raw.ndim == 3:
+        print(out_raw.shape)
+        print(out_raw)
+        out_raw = np.reshape(out_raw, (out_raw.shape[0], out_raw.shape[2]))
+        print(out_raw)
     
     out = pd.DataFrame(scl.inverse_transform(out_raw), columns=['Output'])
     y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
