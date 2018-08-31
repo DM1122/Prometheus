@@ -1,4 +1,6 @@
 import datetime as dt
+import distutils
+from distutils.util import strtobool
 import matplotlib
 from matplotlib import pyplot as plt
 import modelib
@@ -44,13 +46,13 @@ features = [       # Temperature/Clearsky DHI/Clearsky DNI/Clearsky GHI/Dew Poin
 features_label = 'DHI'
 features_label_shift = 24       # hourly resolution
 
-model_type = 'MLP'      # LN/MLP/RNN/LSTM/GRU
+model_type = 'LN'      # LN/MLP/RNN/LSTM/GRU
 learn_rate = 0.0003
-n_layers = 3
-n_nodes = 64
+n_layers = 2
+n_nodes = 355
 act = 'relu'
 
-n_epochs = 3
+n_epochs = 10
 batch_size = 128
 sequence_length = 168       # hours in week
 
@@ -82,14 +84,20 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     except NameError:
         X_train, y_train, X_test, y_test = process_data()
 
+    print('##################################')
+    print('Model Hyperparameters:')
+    print('Architecture: ', model_type)
+    print('learning rate: {0:.1e}'.format(learn_rate))
+    print('layers:', n_layers)
+    print('nodes:', n_nodes)
+    print('activation:', act)
+
     # Model instantiation
     if model_type == 'LN':
-        model = modelib.create_model_linear(learn_rate, X_train.shape[0])
-        print(model.summary())
+        model = modelib.create_model_linear(learn_rate, X_train.shape[1])
     elif model_type == 'MLP':
         model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_train.shape[1])
-        print(model.summary())
-    elif model_type == 'RNN':       # model summary not available for reccurent architectures
+    elif model_type == 'RNN':
         model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, X_train.shape[2], X_train.shape[1])
     elif model_type == 'LSTM':
         model = modelib.create_model_lstm(learn_rate, n_layers, n_nodes, act)
@@ -130,10 +138,6 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print("Validation Loss: {0:.2%}".format(loss))
     print('Elapsed time: {}'.format(time_elapsed))
 
-    # model_save = model
-    # del model
-    # keras.backend.clear_session()
-
     return model, loss, log_dir
 
 
@@ -157,13 +161,28 @@ def plot_model(model):
 
     data_forecast.plot(kind='line', ax=ax1)
     plt.show()
+
+def save_model(model):
+    if not os.path.exists('./models/prometheus'):     # model.save_weights() does not explicitly create dir
+        os.makedirs('./models/prometheus')
+
+    model.save_weights('./models/prometheus/model_weights.h5')
+    print('Model sucessfully saved!')
+
 #endregion
 
 
 if __name__ == '__main__':
     print('Commencing Prometheus model generation...')
+
     model, _, _ = train_model()
+
     test_model(model)
+
     plot_model(model)
+
+    save_request = input('Save model? [y/n]: ')
+    if strtobool(save_request):
+        save_model(model)
 
     print('Debug:\n$tensorboard --logdir=logs')

@@ -87,6 +87,7 @@ if __name__ == '__main__':
     time_end = dt.datetime.now()
     time_elapsed = time_end - time_start
 
+    print('#########################################')
     print('Hyperparameter optimization completed!')
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
@@ -96,9 +97,3 @@ if __name__ == '__main__':
     print('Debug:\n$tensorboard --logdir=logs')
 
 
-# print('##################################')
-# print('Training new model:')
-# print('learning rate: {0:.1e}'.format(learn_rate))
-# print('layers:', n_layers)
-# print('nodes:', n_nodes)
-# print('activation:', act)
