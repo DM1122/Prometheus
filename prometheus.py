@@ -16,34 +16,35 @@ tf.set_random_seed(123)
 
 
 #region Hyperparams
-features = [       # Temperature/Clearsky DHI/Clearsky DNI/Clearsky GHI/Dew Point/DHI/DNI/GHI/Relative Humidity/Solar Zenith Angle/Surface Albedo/Pressure/Precipitable Water/Wind Direction/Wind Speed/Cloud Type_(0-10).0
-    'Temperature',
-    'Clearsky DHI',
-    'Clearsky DNI',
-    'Clearsky GHI',
-    'Dew Point',
-    'DHI',
-    'DNI',
-    'GHI',
-    'Relative Humidity',
-    'Solar Zenith Angle',
-    'Surface Albedo',
-    'Pressure',
-    'Precipitable Water',
-    'Wind Direction',
-    'Wind Speed',
-    'Cloud Type_0.0',
-    'Cloud Type_1.0',
-    'Cloud Type_2.0',
-    'Cloud Type_3.0',
-    'Cloud Type_4.0',
-    'Cloud Type_6.0',
-    'Cloud Type_7.0',
-    'Cloud Type_8.0',
-    'Cloud Type_9.0',
-    'Cloud Type_10.0'
+features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0
+    'temp',
+    'dhi_clear',
+    'dni_clear',
+    'ghi_clear',
+    'dew_point',
+    'dhi',
+    'dni',
+    'ghi',
+    'humidity_rel',
+    'zenith_angle',
+    'albedo_sur',
+    'pressure',
+    'precipitation',
+    'wind_dir',
+    'wind_speed',
+    'cloud_type_0.0',
+    'cloud_type_1.0',
+    'cloud_type_2.0',
+    'cloud_type_3.0',
+    'cloud_type_4.0',
+    'cloud_type_5.0',
+    'cloud_type_6.0',
+    'cloud_type_7.0',
+    'cloud_type_8.0',
+    'cloud_type_9.0',
+    'cloud_type_10.0'
 ]
-features_label = 'DHI'
+features_label = 'dhi'
 features_label_shift = 24       # hourly resolution
 
 model_type = 'LN'      # LN/MLP/RNN/LSTM/GRU
@@ -76,6 +77,7 @@ def process_data():
         y_test = processlib.reshape(y_test, sequence_length)
     
     return X_train, y_train, X_test, y_test
+
 
 def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act):
     global X_train, y_train, X_test, y_test
@@ -161,6 +163,7 @@ def plot_model(model):
 
     data_forecast.plot(kind='line', ax=ax1)
     plt.show()
+
 
 def save_model(model):
     if not os.path.exists('./models/prometheus'):     # model.save_weights() does not explicitly create dir

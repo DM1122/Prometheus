@@ -21,6 +21,7 @@ def request_data():     # data will be sent via email
     response = requests.request('POST', url, data=payload, headers=headers)
     print(response.text)
 
+
 def preprocess_data():     # process and combine yearly data to comp
     data = pd.DataFrame()
     for file in sorted(os.listdir('./data/raw/')):
@@ -30,16 +31,36 @@ def preprocess_data():     # process and combine yearly data to comp
 
     data.drop(columns=['Month', 'Day', 'Hour', 'Minute', 'Fill Flag'], inplace=True)
 
+    # Column renaming
+    data.rename({
+        'Temperature':'temp',
+        'Clearsky DHI':'dhi_clear',
+        'Clearsky DNI':'dni_clear',
+        'Clearsky GHI':'ghi_clear',
+        'Dew Point':'dew_point',
+        'DHI':'dhi',
+        'DNI':'dni',
+        'GHI':'ghi',
+        'Relative Humidity':'humidity_rel',
+        'Solar Zenith Angle':'zenith_angle',
+        'Surface Albedo':'albedo_sur',
+        'Pressure':'pressure',
+        'Precipitable Water':'precipitation',
+        'Wind Direction':'wind_dir',
+        'Wind Speed':'wind_speed',
+        'Cloud Type':'cloud_type'}, axis=1, inplace=True)
+
     # Nan handler
-    data['Cloud Type'].fillna(method='ffill', inplace=True)      # categorical forward fill
+    data['cloud_type'].fillna(method='ffill', inplace=True)      # categorical forward fill
     data.interpolate(method='linear', axis=0, limit_area='inside', inplace=True)        # linear interpolation
 
     # categorical encoding
-    data = pd.get_dummies(data, dummy_na=False, columns=['Cloud Type'])     # cloud type num assigned may not correspond w/ original designation
+    data = pd.get_dummies(data, dummy_na=False, columns=['cloud_type'])     # cloud type num assigned may not correspond w/ original designation
 
     print(data.head())
     data.to_csv('./data/comp.csv')
     print('Success!')
+
 
 def get_data(features):
     data = pd.read_csv('./data/comp.csv', header=0, index_col=0)
