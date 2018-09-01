@@ -1,13 +1,12 @@
 import datetime as dt
 import distutils
 from distutils.util import strtobool
+import libs
+from libs import modelib, NSRDBlib, processlib
 import matplotlib
 from matplotlib import pyplot as plt
-import modelib
 import numpy as np
-import NSRDBlib
 import os
-import processlib
 import tensorflow as tf
 from tensorflow import keras
 
@@ -159,12 +158,11 @@ def plot_model(model):
 
 
 def save_model(model):
-    if not os.path.exists('./models/prometheus'):     # model.save_weights() does not explicitly create dir
-        os.makedirs('./models/prometheus')
+    if not os.path.exists('./models/'+os.path.basename(__file__)):     # model.save_weights() does not explicitly create dir
+        os.makedirs('./models/'+os.path.basename(__file__))
 
-    model.save_weights('./models/prometheus/model_weights.h5')
+    model.save('./models/'+os.path.basename(__file__)+'/model.keras')
     print('Model sucessfully saved!')
-
 #endregion
 
 

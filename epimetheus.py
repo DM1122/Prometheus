@@ -49,12 +49,12 @@ def update_best_model(model, loss, log_dir):
 
     # determine best model
     if loss <= loss_best:
-        if not os.path.exists('./models/epimetheus'):     # model.save() does not explicitly create dir
-            os.makedirs('./models/epimetheus')
+        if not os.path.exists('./models/'+os.path.basename(__file__)):      # model.save() does not explicitly create dir
+            os.makedirs('./models/'+os.path.basename(__file__))
 
         print('New best!')
         loss_best = loss      # update best accuracy
-        model.save('./models/epimetheus/model.keras')     # save best model to disk
+        model.save('./models/'+os.path.basename(__file__)+'/model.keras')     # save best model to disk
 
         # delete all other model logs
         for log in os.listdir('./logs/'):
