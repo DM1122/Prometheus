@@ -42,13 +42,13 @@ features_label_shift = 24       # hourly resolution
 split_test = 0.2       # first
 split_val = 0.25       # second
 
-model_type = 'LN'      # LN/MLP/RNN/LSTM/GRU
+model_type = 'RNN'      # LN/MLP/RNN/LSTM/GRU
 learn_rate = 0.001
-n_layers = 2
-n_nodes = 355
+n_layers = 1
+n_nodes = 3
 act = 'relu'
 
-n_epochs = 100
+n_epochs = 5000
 batch_size = 128
 sequence_length = 168       # hours in week
 #endregion
@@ -87,16 +87,14 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('activation:', act)
 
     # Model instantiation
-    if model_type == 'LN':
-        model = modelib.create_model_linear(learn_rate, X_train.shape[1])
-    elif model_type == 'MLP':
+    if model_type == 'MLP':
         model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_train.shape[1])
     elif model_type == 'RNN':
-        model = modelib.create_model_rnn(learn_rate, n_layers, n_nodes, act, X_train.shape[2], X_train.shape[1])
+        model = modelib.create_model_RNN(learn_rate, n_layers, n_nodes, act, X_train.shape[2], X_train.shape[1])
     elif model_type == 'LSTM':
-        model = modelib.create_model_lstm(learn_rate, n_layers, n_nodes, act)
+        model = modelib.create_model_LSTM(learn_rate, n_layers, n_nodes, act)
     elif model_type == 'GRU':
-        model = modelib.create_model_lstm(learn_rate, n_layers, n_nodes, act)
+        model = modelib.create_model_GRU(learn_rate, n_layers, n_nodes, act)
     else:
         raise ValueError('Invalid model type {}'.format(model_type))
 
@@ -140,13 +138,15 @@ def test_model(model):
     result = model.evaluate(x=X_test, y=y_test)
     for name, value in zip(model.metrics_names, result):
         print(name, value)
-
-
-def plot_model(model):
+    
     print('Plotting output...')
     output = model.predict(x=X_test, verbose=1)
 
-    data_forecast = processlib.unprocess(output, y_test)
+    if output.ndim == 3:
+        output = processlib.unshape(output, sequence_length)
+        y = processlib.unshape(y_test, sequence_length)
+
+    data_forecast = processlib.unprocess(output, y)
 
     matplotlib.style.use('classic')
     fig = plt.figure('{0} Output: {1}'.format(model_type,features_label))
@@ -172,8 +172,6 @@ if __name__ == '__main__':
     model, _, _ = train_model()
 
     test_model(model)
-
-    plot_model(model)
 
     save_request = input('Save model? [y/n]: ')
     if strtobool(save_request):

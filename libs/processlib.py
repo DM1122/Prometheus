@@ -14,6 +14,7 @@ def label(data, label, shift):
 
     return data_features, data_labels
 
+
 def split(data_features, data_labels, split):
     X_tr, X_te, y_tr, y_te = TrainTestSplit(data_features, data_labels, shuffle=False, test_size=split)
 
@@ -29,6 +30,7 @@ def split(data_features, data_labels, split):
 
     return X_tr, y_tr, X_te, y_te
 
+
 def normalize(X_tr, y_tr, X_te, y_te):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_tr)
     y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_tr)
@@ -43,26 +45,29 @@ def normalize(X_tr, y_tr, X_te, y_te):
 
     return X_tr, y_tr, X_te, y_te
 
+
 def reshape(data_raw, look_back):
     crop = data_raw.shape[0]-data_raw.shape[0]%look_back        # modulus
     data_raw = data_raw[:crop]      # crop to length divisble by look_back
 
     data = []
-    for i in range(data_raw.shape[0] - look_back):
-        data.append(data_raw[i:(i+look_back)])
+    for i in range(data_raw.shape[0] // look_back):     # int divisor // or subtraction -
+        #data.append(data_raw[i:(i+look_back)])
+        data.append(data_raw[i*look_back:i*look_back+look_back])
     data = np.array(data)
 
-    data = np.reshape(data, (data.shape[0], data.shape[1], data_raw.shape[1]))      # sample, timesteps, features
+    data = np.reshape(data, (data.shape[0], data.shape[1], data_raw.shape[1]))      # samples, timesteps, features (unneccesary?)
+    
+    return data
+
+
+def unshape(data_raw, look_back):
+    data = np.reshape(data_raw, (data_raw.shape[0]*data_raw.shape[1], data_raw.shape[2]))       # samples, features
 
     return data
 
-def unprocess(out_raw, y_raw):       # untested
-    if out_raw.ndim == 3:
-        print(out_raw.shape)
-        print(out_raw)
-        out_raw = np.reshape(out_raw, (out_raw.shape[0], out_raw.shape[2]))
-        print(out_raw)
-    
+
+def unprocess(out_raw, y_raw):    
     out = pd.DataFrame(scl.inverse_transform(out_raw), columns=['Output'])
     y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
 

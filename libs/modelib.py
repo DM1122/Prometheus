@@ -6,8 +6,8 @@ from tensorflow import keras
 def create_model_linear(learn_rate, n_features):
     model = keras.Sequential()
 
-    model.add(keras.layers.InputLayer(input_shape=(n_features, )))
-    model.add(keras.layers.Dense(units=1, activation='linear', name='output_layer'))
+    model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
+    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 
     optimizer = keras.optimizers.Adam(lr=learn_rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
@@ -18,12 +18,12 @@ def create_model_linear(learn_rate, n_features):
 def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features):
     model = keras.Sequential()
     
-    model.add(keras.layers.InputLayer(input_shape=(n_features, )))
+    model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
 
     for i in range(n_layers):
-        model.add(keras.layers.Dense(units=n_nodes, activation=act))
+        model.add(keras.layers.Dense(units=n_nodes, activation=act, name='Dense_{}'.format(i+1)))
     
-    model.add(keras.layers.Dense(units=1, activation='linear', name='layer_output'))
+    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 
     optimizer = keras.optimizers.Adam(lr=learn_rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
@@ -31,15 +31,15 @@ def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features):
     return model
 
 
-def create_model_rnn(learn_rate, n_layers, n_nodes, act, n_features, sequence_length):
+def create_model_RNN(learn_rate, n_layers, n_nodes, act, n_features, sequence_length):
     model = keras.Sequential()
     
-    #model.add(keras.layers.InputLayer(input_shape=(sequence_length, n_features, )))
+    # model.add(keras.layers.InputLayer(input_shape=(sequence_length, n_features, )))
 
     for i in range(n_layers):
-        model.add(keras.layers.SimpleRNN(units=n_nodes, activation=act, return_sequences=True))
+        model.add(keras.layers.SimpleRNN(units=n_nodes, activation=act, return_sequences=True, name='RNN_{}'.format(i+1)))
     
-    model.add(keras.layers.Dense(units=1, activation='linear'))
+    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 
     optimizer = keras.optimizers.Adam(lr=learn_rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
@@ -47,13 +47,13 @@ def create_model_rnn(learn_rate, n_layers, n_nodes, act, n_features, sequence_le
     return model
 
 
-def create_model_lstm(learn_rate, n_layers, n_nodes, act):
+def create_model_LSTM(learn_rate, n_layers, n_nodes, act):
     model = keras.Sequential()
 
     for i in range(n_layers):
-        model.add(keras.layers.LSTM(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True))
+        model.add(keras.layers.LSTM(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True, name='LSTM_{}'.format(i+1)))
 
-    model.add(keras.layers.Dense(units=1, activation='linear'))
+    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 
     optimizer = keras.optimizers.Adam(lr=learn_rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
@@ -65,14 +65,12 @@ def create_model_GRU(learn_rate, n_layers, n_nodes, act):
     model = keras.Sequential()
 
     for i in range(n_layers):
-        model.add(keras.layers.GRU(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True))
+        model.add(keras.layers.GRU(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True, name='GRU_{}'.format(i+1)))
 
-    model.add(keras.layers.Dense(units=1, activation='linear'))
+    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 
     optimizer = keras.optimizers.Adam(lr=learn_rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model
 #endregion
-
-# name='layer_dense_{}'.format(i+1)
