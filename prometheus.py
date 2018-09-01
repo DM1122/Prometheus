@@ -16,7 +16,7 @@ tf.set_random_seed(123)
 
 
 #region Hyperparams
-features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0
+features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
     'temp',
     'dhi_clear',
     'dni_clear',
@@ -37,7 +37,6 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
     'cloud_type_2.0',
     'cloud_type_3.0',
     'cloud_type_4.0',
-    'cloud_type_5.0',
     'cloud_type_6.0',
     'cloud_type_7.0',
     'cloud_type_8.0',
@@ -46,19 +45,18 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
 ]
 features_label = 'dhi'
 features_label_shift = 24       # hourly resolution
+split_test = 0.2       # first
+split_val = 0.25       # second
 
 model_type = 'LN'      # LN/MLP/RNN/LSTM/GRU
-learn_rate = 0.0003
+learn_rate = 0.001
 n_layers = 2
 n_nodes = 355
 act = 'relu'
 
-n_epochs = 10
+n_epochs = 100
 batch_size = 128
 sequence_length = 168       # hours in week
-
-split_test = 0.2       # first
-split_val = 0.25       # second
 #endregion
 
 
@@ -137,7 +135,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     loss = history.history['val_loss'][-1]
 
     print('Model training completed!')
-    print("Validation Loss: {0:.2%}".format(loss))
+    print("Validation loss: {0:.2%}".format(loss))
     print('Elapsed time: {}'.format(time_elapsed))
 
     return model, loss, log_dir
