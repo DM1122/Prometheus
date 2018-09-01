@@ -12,7 +12,7 @@ np.random.seed(123)
 tf.set_random_seed(123)
 
 #region Metaparams
-params_search_calls = 100        # >= 11
+params_search_calls = 500        # >= 11
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 params = [learn_rate_space]
 params_init = [3e-5]
@@ -56,7 +56,7 @@ def fitness(learn_rate):
     time_elapsed = time_end - time_start
     loss = history.history['val_loss'][-1]
 
-    print('Multi-regression completed!')
+    print('Multiregression completed!')
     print("Validation loss: {0:.2%}".format(loss))
     print('Elapsed time: {}'.format(time_elapsed))
 
