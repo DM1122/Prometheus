@@ -42,41 +42,26 @@ features_label_shift = 24       # hourly resolution
 split_test = 0.2       # first
 split_val = 0.25       # second
 
-model_type = 'RNN'      # LN/MLP/RNN/LSTM/GRU
-learn_rate = 0.001
-n_layers = 1
-n_nodes = 3
+model_type = 'RNN'      # MLP/RNN/LSTM/GRU
+learn_rate = 0.0003
+n_layers = 2
+n_nodes = 16
 act = 'relu'
 
-n_epochs = 5000
+n_epochs = 100
 batch_size = 128
-sequence_length = 168       # hours in week
+sequence_length = 730       # hours in week
 #endregion
 
 
 #region Functions
-def process_data():
-    data = NSRDBlib.get_data(features)      # get data
-    data_features, data_labels = processlib.label(data, features_label, features_label_shift)       # create labels    
-    X_train_raw, y_train_raw, X_test_raw, y_test_raw = processlib.split(data_features, data_labels, split_test)        # split data into train/test
-    X_train, y_train, X_test, y_test = processlib.normalize(X_train_raw,y_train_raw, X_test_raw, y_test_raw)        # normalize datasets
-
-    # Data reshape for reccurent architectures
-    if model_type == 'RNN' or model_type == 'LSTM' or model_type == 'GRU':
-        X_train = processlib.reshape(X_train, sequence_length)
-        y_train = processlib.reshape(y_train, sequence_length)
-        X_test = processlib.reshape(X_test, sequence_length)
-        y_test = processlib.reshape(y_test, sequence_length)
-    
-    return X_train, y_train, X_test, y_test
-
-
 def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act):
     global X_train, y_train, X_test, y_test
     try:        # prevents data from being reprocessed every call
         X_train
     except NameError:
-        X_train, y_train, X_test, y_test = process_data()
+        data = NSRDBlib.get_data(features)      # get data
+        X_train, y_train, X_test, y_test = processlib.process(data, features_label, features_label_shift, split_test, model_type, sequence_length)
 
     print('##################################')
     print('Model Hyperparameters:')
@@ -142,18 +127,14 @@ def test_model(model):
     print('Plotting output...')
     output = model.predict(x=X_test, verbose=1)
 
-    if output.ndim == 3:
-        output = processlib.unshape(output, sequence_length)
-        y = processlib.unshape(y_test, sequence_length)
-
-    data_forecast = processlib.unprocess(output, y)
+    data_comp = processlib.unprocess(output, y_test, model_type)
 
     matplotlib.style.use('classic')
     fig = plt.figure('{0} Output: {1}'.format(model_type,features_label))
     ax1 = fig.add_subplot(1,1,1)
-    ax1.set_title('Testing')
+    ax1.set_title('Test')
 
-    data_forecast.plot(kind='line', ax=ax1)
+    data_comp.plot(kind='line', ax=ax1)
     plt.show()
 
 

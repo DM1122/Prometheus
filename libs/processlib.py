@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split as TrainTestSplit
 from sklearn.preprocessing import MinMaxScaler
 
 #region Functions
-def label(data, label, shift):
+def labeller(data, label, shift):
     data['Label'] = data[label].shift(-shift)       # create label col
     data.dropna(inplace=True)       # drop gap created by shift length
 
@@ -15,64 +15,115 @@ def label(data, label, shift):
     return data_features, data_labels
 
 
-def split(data_features, data_labels, split):
-    X_tr, X_te, y_tr, y_te = TrainTestSplit(data_features, data_labels, shuffle=False, test_size=split)
+def splitter(data_features, data_labels, split):
+    X_train, X_test, y_train, y_test = TrainTestSplit(data_features, data_labels, shuffle=False, test_size=split)
 
     # convert all datasets to np arrays for compatability
-    X_tr = np.array(X_tr)
-    y_tr = np.array(y_tr)
-    X_te = np.array(X_te)
-    y_te = np.array(y_te)
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
 
     # reshape labels 1D to 2D array
-    y_tr = np.reshape(y_tr, [-1,1])     
-    y_te = np.reshape(y_te, [-1,1])
+    y_train = np.reshape(y_train, [-1,1])     
+    y_test = np.reshape(y_test, [-1,1])
 
-    return X_tr, y_tr, X_te, y_te
+    return X_train, y_train, X_test, y_test
 
 
-def normalize(X_tr, y_tr, X_te, y_te):
-    X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_tr)
-    y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_tr)
+def normalizer(X_train, y_train, X_test, y_test):
+    X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+    y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
 
-    X_tr = X_scl.transform(X_tr)
-    y_tr = y_scl.transform(y_tr)
-    X_te = X_scl.transform(X_te)    
-    y_te = y_scl.transform(y_te)
+    X_train = X_scl.transform(X_train)
+    y_train = y_scl.transform(y_train)
+    X_test = X_scl.transform(X_test)    
+    y_test = y_scl.transform(y_test)
 
     global scl
     scl = y_scl
 
-    return X_tr, y_tr, X_te, y_te
+    return X_train, y_train, X_test, y_test
 
 
-def reshape(data_raw, look_back):
-    crop = data_raw.shape[0]-data_raw.shape[0]%look_back        # modulus
-    data_raw = data_raw[:crop]      # crop to length divisble by look_back
+def reshaper(data_raw, timesteps):
+    crop = data_raw.shape[0]-data_raw.shape[0]%timesteps        # modulus
+    data_raw = data_raw[:crop]      # crop to length divisble by timesteps
+
+    # data = []
+    # for i in range(data_raw.shape[0] // timesteps):     # int divisor // or subtraction -
+    #     data.append(data_raw[i*timesteps:i*timesteps+timesteps])
+    # data = np.array(data)
+    # data = np.reshape(data, (data.shape[0], data.shape[1], data_raw.shape[1]))      # samples, timesteps, features (unneccesary?)
 
     data = []
-    for i in range(data_raw.shape[0] // look_back):     # int divisor // or subtraction -
-        #data.append(data_raw[i:(i+look_back)])
-        data.append(data_raw[i*look_back:i*look_back+look_back])
+    for i in range(data_raw.shape[0] - timesteps):     # int divisor // or subtraction -
+        data.append(data_raw[i:i+timesteps])
     data = np.array(data)
-
-    data = np.reshape(data, (data.shape[0], data.shape[1], data_raw.shape[1]))      # samples, timesteps, features (unneccesary?)
     
     return data
 
 
-def unshape(data_raw, look_back):
-    data = np.reshape(data_raw, (data_raw.shape[0]*data_raw.shape[1], data_raw.shape[2]))       # samples, features
+def unshaper(data_raw):
+    # data = np.reshape(data, (data.shape[0]*data.shape[1], data.shape[2]))       # samples, features
+    data_raw = np.reshape(data_raw, (data_raw.shape[0], data_raw.shape[1]))       # samples, features
+    print(data_raw.shape)
 
+    data = []
+    data.append(data_raw[0:1])      # append 
+    data = np.array(data)
+    data = np.reshape(data, (data.shape[2],1))
+
+    for i in range(data_raw.shape[0] - 1):
+        block = []
+        block.append(data_raw[i+1:i+2, data_raw.shape[1]-1:])
+        block = np.array(block)
+        block = np.reshape(block, (block.shape[2],1))
+
+        data = np.concatenate((data, block), axis=0)
+        
+
+    print(data.shape)
+    print(data)
     return data
 
 
-def unprocess(out_raw, y_raw):    
-    out = pd.DataFrame(scl.inverse_transform(out_raw), columns=['Output'])
+def process(data, label, shift, split, model, timesteps):
+
+    # Label
+    data_features, data_labels = labeller(data, label, shift)
+
+    # Split
+    X_train, y_train, X_test, y_test = splitter(data_features, data_labels, split)
+
+    # Normalize
+    X_train, y_train, X_test, y_test = normalizer(X_train, y_train, X_test, y_test)
+
+    # Reshape RNNs
+    if model == 'RNN' or model == 'LSTM' or model == 'GRU':
+        X_train = reshaper(X_train, timesteps)
+        y_train = reshaper(y_train, timesteps)
+        X_test = reshaper(X_test, timesteps)
+        y_test = reshaper(y_test, timesteps)
+    
+    return X_train, y_train, X_test, y_test
+
+
+def unprocess(output_raw, y_raw, model):
+
+    # Unshape RNNs
+    if model == 'RNN' or model == 'LSTM' or model == 'GRU':
+        output_raw = unshaper(output_raw)
+        y_raw = unshaper(y_raw)
+
+    # Unscale
+    output = pd.DataFrame(scl.inverse_transform(output_raw), columns=['Output'])
     y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
 
-    data_forecast = pd.concat([out, y], axis=1, sort=False)
-    data_forecast.index.names = ['Index']
+    # Concat to df
+    data_comp = pd.concat([output, y], axis=1, sort=False)
+    data_comp.index.names = ['Index']
 
-    return data_forecast
+    return data_comp
+
 #endregion
