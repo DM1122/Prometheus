@@ -42,15 +42,15 @@ features_label_shift = 24       # hourly resolution
 split_test = 0.2       # first
 split_val = 0.25       # second
 
-model_type = 'RNN'      # MLP/RNN/LSTM/GRU
-learn_rate = 0.0003
-n_layers = 2
-n_nodes = 16
+model_type = 'MLP'      # MLP/RNN/LSTM/GRU
+learn_rate = 0.0005799708895672564
+n_layers = 1
+n_nodes = 4
 act = 'relu'
 
 n_epochs = 100
 batch_size = 128
-sequence_length = 730       # hours in week
+sequence_length = 24       # hours in week
 #endregion
 
 
@@ -66,7 +66,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('##################################')
     print('Model Hyperparameters:')
     print('Architecture: ', model_type)
-    print('learning rate: {0:.1e}'.format(learn_rate))
+    print('learning rate: {}'.format(learn_rate))
     print('layers:', n_layers)
     print('nodes:', n_nodes)
     print('activation:', act)
@@ -83,6 +83,13 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     else:
         raise ValueError('Invalid model type {}'.format(model_type))
 
+
+    global call_count       # keep track of hyperparam search calls
+    try:
+        call_count
+    except NameError:
+        call_count = 0
+
     # Callback logging
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
     log_dir = './logs/{0}({1})_{2}_rate({3})_layers({4})_nodes({5})/'.format(log_date,os.path.basename(__file__),model_type,learn_rate,n_layers,n_nodes)
@@ -94,6 +101,15 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         write_grads=False,
         write_images=False
     )
+
+    # Early stopping
+    # keras.callbacks.EarlyStopping(
+    #     monitor='val_loss',
+    #     min_delta=0,
+    #     patience=2,
+    #     verbose=1,
+    #     mode='min',
+    #     baseline=None)
 
     # Run model
     time_start = dt.datetime.now()
@@ -109,11 +125,15 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     )
     time_end = dt.datetime.now()
     time_elapsed = time_end - time_start
+    call_count += 1
     loss = history.history['val_loss'][-1]
 
     print('Model training completed!')
-    print("Validation loss: {0:.2%}".format(loss))
+    print("Validation loss: {}".format(loss))
     print('Elapsed time: {}'.format(time_elapsed))
+    if call_count >= 2:
+        from epimetheus import params_search_calls
+        print('Search {0}/{1}'.format(call_count,params_search_calls))
 
     return model, loss, log_dir
 

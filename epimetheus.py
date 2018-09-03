@@ -14,11 +14,11 @@ tf.set_random_seed(123)
 
 
 #region Metaparams
-params_search_calls = 11       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+params_search_calls = 100       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
-nodes_space = skopt.space.Integer(low=4, high=512, name='n_nodes')
+nodes_space = skopt.space.Integer(low=2, high=512, name='n_nodes')
 act_space = skopt.space.Categorical(categories=['relu'], name='act')
 
 params = [learn_rate_space, layers_space, nodes_space, act_space]

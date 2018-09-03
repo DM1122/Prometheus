@@ -67,7 +67,6 @@ def reshaper(data_raw, timesteps):
 def unshaper(data_raw):
     # data = np.reshape(data, (data.shape[0]*data.shape[1], data.shape[2]))       # samples, features
     data_raw = np.reshape(data_raw, (data_raw.shape[0], data_raw.shape[1]))       # samples, features
-    print(data_raw.shape)
 
     data = []
     data.append(data_raw[0:1])      # append 
@@ -81,10 +80,7 @@ def unshaper(data_raw):
         block = np.reshape(block, (block.shape[2],1))
 
         data = np.concatenate((data, block), axis=0)
-        
 
-    print(data.shape)
-    print(data)
     return data
 
 
