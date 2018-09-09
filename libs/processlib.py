@@ -33,15 +33,15 @@ def splitter(data_features, data_labels, split):
 
 def normalizer(X_train, y_train, X_test, y_test):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
-    y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
+    # y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
 
     X_train = X_scl.transform(X_train)
-    y_train = y_scl.transform(y_train)
+    #y_train = y_scl.transform(y_train)
     X_test = X_scl.transform(X_test)    
-    y_test = y_scl.transform(y_test)
+    #y_test = y_scl.transform(y_test)
 
-    global scl
-    scl = y_scl
+    #global scl
+    #scl = y_scl
 
     return X_train, y_train, X_test, y_test
 
@@ -113,10 +113,14 @@ def unprocess(output_raw, y_raw, model):
         y_raw = unshaper(y_raw)
 
     # Unscale
-    output = pd.DataFrame(scl.inverse_transform(output_raw), columns=['Output'])
-    y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
+    # output = pd.DataFrame(scl.inverse_transform(output_raw), columns=['Output'])
+    # y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
 
-    # Concat to df
+    # Convert to df
+    output = pd.DataFrame(output_raw, columns=['Output'])
+    y = pd.DataFrame(y_raw, columns=['Truth'])
+
+    # Concat dfs
     data_comp = pd.concat([output, y], axis=1, sort=False)
     data_comp.index.names = ['Index']
 

@@ -43,13 +43,13 @@ split_test = 0.2       # first
 split_val = 0.25       # second
 
 model_type = 'MLP'      # MLP/RNN/LSTM/GRU
-learn_rate = 0.0005799708895672564
-n_layers = 1
-n_nodes = 4
+learn_rate = 0.000033083129600225145
+n_layers = 3
+n_nodes = 100
 act = 'relu'
 
 n_epochs = 100
-batch_size = 128
+batch_size = 256
 sequence_length = 24       # hours in week
 #endregion
 
@@ -95,10 +95,10 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     log_dir = './logs/{0}({1})_{2}_rate({3})_layers({4})_nodes({5})/'.format(log_date,os.path.basename(__file__),model_type,learn_rate,n_layers,n_nodes)
     callback_log = keras.callbacks.TensorBoard(
         log_dir=log_dir,
-        histogram_freq=0,       # not working
+        histogram_freq=5,
         batch_size=32,
         write_graph=True,
-        write_grads=False,
+        write_grads=True,
         write_images=False
     )
 
@@ -145,16 +145,30 @@ def test_model(model):
         print(name, value)
     
     print('Plotting output...')
-    output = model.predict(x=X_test, verbose=1)
+    output_train = model.predict(x=X_train, verbose=1)
+    output_validate = model.predict(x=X_train, verbose=1)
+    output_test = model.predict(x=X_test, verbose=1)
 
-    data_comp = processlib.unprocess(output, y_test, model_type)
+    data_comp_train = processlib.unprocess(output_train, y_train, model_type)
+    data_comp_validate = processlib.unprocess(output_validate, y_train, model_type)
+    data_comp_test = processlib.unprocess(output_test, y_test, model_type)
 
     matplotlib.style.use('classic')
     fig = plt.figure('{0} Output: {1}'.format(model_type,features_label))
-    ax1 = fig.add_subplot(1,1,1)
-    ax1.set_title('Test')
 
-    data_comp.plot(kind='line', ax=ax1)
+    # ax1 = fig.add_subplot(3,1,1)
+    # ax2 = fig.add_subplot(3,1,2)
+    ax3 = fig.add_subplot(1,1,1)
+    
+    # ax1.set_title('Train')
+    # ax2.set_title('Validate')
+    ax3.set_title('Test')
+
+    #data_comp_validate = data_comp_validate[len(data_comp_validate) - len(data_comp_validate)*int(split_val):]
+
+    # data_comp_train.plot(kind='line', ax=ax1)
+    # data_comp_validate.plot(kind='line', ax=ax2)
+    data_comp_test.plot(kind='line', ax=ax3)
     plt.show()
 
 
