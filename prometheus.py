@@ -47,6 +47,7 @@ learn_rate = 0.000033083129600225145
 n_layers = 3
 n_nodes = 100
 act = 'relu'
+dropout = 0.2
 
 n_epochs = 100
 batch_size = 256
@@ -55,7 +56,7 @@ sequence_length = 24       # hours in week
 
 
 #region Functions
-def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act):
+def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act, dropout=dropout):
     global X_train, y_train, X_test, y_test
     try:        # prevents data from being reprocessed every call
         X_train
@@ -70,10 +71,11 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('layers:', n_layers)
     print('nodes:', n_nodes)
     print('activation:', act)
+    print('dropout:', dropout)
 
     # Model instantiation
     if model_type == 'MLP':
-        model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_train.shape[1])
+        model = modelib.create_model_dense(learn_rate, n_layers, n_nodes, act, X_train.shape[1], dropout)
     elif model_type == 'RNN':
         model = modelib.create_model_RNN(learn_rate, n_layers, n_nodes, act, X_train.shape[2], X_train.shape[1])
     elif model_type == 'LSTM':
@@ -92,7 +94,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     # Callback logging
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/{0}({1})_{2}_rate({3})_layers({4})_nodes({5})/'.format(log_date,os.path.basename(__file__),model_type,learn_rate,n_layers,n_nodes)
+    log_dir = './logs/{0}({1})_{2}_rate({3})_layers({4})_nodes({5})_drop({6})/'.format(log_date,os.path.basename(__file__),model_type,learn_rate,n_layers,n_nodes,dropout)
     callback_log = keras.callbacks.TensorBoard(
         log_dir=log_dir,
         histogram_freq=5,

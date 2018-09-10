@@ -15,7 +15,7 @@ def create_model_linear(learn_rate, n_features):
     return model
 
 
-def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features):
+def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):
     model = keras.Sequential()
     
     # model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
@@ -28,6 +28,8 @@ def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features):
             bias_initializer='zeros',
             #kernel_regularizer=keras.regularizers.l2(l=0.00001),
             name='Dense_{}'.format(i+1)))
+        
+        model.add(keras.layers.Dropout(dropout))
     
     model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
 

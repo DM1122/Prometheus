@@ -20,17 +20,18 @@ learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', na
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
 nodes_space = skopt.space.Integer(low=2, high=1024, name='n_nodes')
 act_space = skopt.space.Categorical(categories=['relu'], name='act')
+dropout_space = skopt.space.Real(low=0, high=0.5, name='dropout')
 
-params = [learn_rate_space, layers_space, nodes_space, act_space]
-params_init = [3e-5, 1, 16, 'relu']
+params = [learn_rate_space, layers_space, nodes_space, act_space, dropout_space]
+params_init = [3e-5, 1, 16, 'relu', 0.2]
 #endregion
 
 
 #region Functions
 @skopt.utils.use_named_args(dimensions=params)      # allows params to be passed as list
-def fitness(learn_rate, n_layers, n_nodes, act):
+def fitness(learn_rate, n_layers, n_nodes, act, dropout):
 
-    model, fitness, log_dir = prometheus.train_model(learn_rate, n_layers, n_nodes, act)
+    model, fitness, log_dir = prometheus.train_model(learn_rate, n_layers, n_nodes, act, dropout)
 
     update_best_model(model, fitness, log_dir)
 
