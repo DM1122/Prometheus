@@ -14,11 +14,11 @@ tf.set_random_seed(123)
 
 
 #region Metaparams
-params_search_calls = 100       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
+params_search_calls = 11       # must be >=11 (risk 'The objective has been evaluated at this point before' w/ values >100)
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
-nodes_space = skopt.space.Integer(low=2, high=1024, name='n_nodes')
+nodes_space = skopt.space.Integer(low=2, high=512, name='n_nodes')
 act_space = skopt.space.Categorical(categories=['relu'], name='act')
 dropout_space = skopt.space.Real(low=0, high=0.5, name='dropout')
 
@@ -69,8 +69,18 @@ def plot_results(search):
     matplotlib.style.use('classic')
     fig1 = skopt.plots.plot_convergence(search)
     fig2, ax = skopt.plots.plot_histogram(result=search, dimension_name='n_layers')
-    fig3, ax = skopt.plots.plot_objective(result=search, dimension_names=['learn_rate','n_layers','n_nodes'])
-    fig4, ax = skopt.plots.plot_evaluations(result=search, dimension_names=['learn_rate','n_layers','n_nodes'])
+    fig3, ax = skopt.plots.plot_histogram(result=search, dimension_name='n_nodes')
+    fig4, ax = skopt.plots.plot_objective(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
+    fig5, ax = skopt.plots.plot_evaluations(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
+
+    date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    os.makedirs('./plots/'+os.path.basename(__file__)+'/'+date+'/')
+    # fig1.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/convergence_plot.png')      # does not work, must save manually!
+    fig2.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/histogram(layers)_plot.png')
+    fig3.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/histogram(nodes)_plot.png')
+    fig4.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/objective_plot.png')
+    fig5.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/evaluations_plot.png')
+
     plt.show()
 #endregion
 

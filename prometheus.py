@@ -49,7 +49,7 @@ n_nodes = 100
 act = 'relu'
 dropout = 0.2
 
-n_epochs = 100
+n_epochs = 1
 batch_size = 256
 sequence_length = 24       # hours in week
 #endregion
