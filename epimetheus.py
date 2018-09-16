@@ -26,6 +26,7 @@ params = [learn_rate_space, layers_space, nodes_space, act_space, dropout_space]
 params_init = [3e-5, 1, 16, 'relu', 0.2]
 #endregion
 
+file_name = os.path.basename(__file__)
 
 #region Functions
 @skopt.utils.use_named_args(dimensions=params)      # allows params to be passed as list
@@ -50,12 +51,12 @@ def update_best_model(model, loss, log_dir):
 
     # determine best model
     if loss <= loss_best:
-        if not os.path.exists('./models/'+os.path.basename(__file__)):      # model.save() does not explicitly create dir
-            os.makedirs('./models/'+os.path.basename(__file__))
+        if not os.path.exists('./models/'+file_name):      # model.save() does not explicitly create dir
+            os.makedirs('./models/'+file_name)
 
         print('New best!')
         loss_best = loss      # update best accuracy
-        model.save('./models/'+os.path.basename(__file__)+'/model.keras')     # save best model to disk
+        model.save('./models/'+file_name+'/model.keras')     # save best model to disk
 
         # delete all other model logs
         for log in os.listdir('./logs/'):
@@ -68,18 +69,16 @@ def update_best_model(model, loss, log_dir):
 def plot_results(search):
     matplotlib.style.use('classic')
     fig1 = skopt.plots.plot_convergence(search)
-    fig2, ax = skopt.plots.plot_histogram(result=search, dimension_name='n_layers')
-    fig3, ax = skopt.plots.plot_histogram(result=search, dimension_name='n_nodes')
-    fig4, ax = skopt.plots.plot_objective(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
-    fig5, ax = skopt.plots.plot_evaluations(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
+    fig2, ax = skopt.plots.plot_objective(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
+    fig3, ax = skopt.plots.plot_evaluations(result=search, dimension_names=['learn_rate','n_layers','n_nodes','dropout'])
 
-    date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    os.makedirs('./plots/'+os.path.basename(__file__)+'/'+date+'/')
-    # fig1.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/convergence_plot.png')      # does not work, must save manually!
-    fig2.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/histogram(layers)_plot.png')
-    fig3.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/histogram(nodes)_plot.png')
-    fig4.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/objective_plot.png')
-    fig5.savefig('./plots/'+os.path.basename(__file__)+'/'+date+'/evaluations_plot.png')
+    # Save plot to disk
+    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    plot_dir = './plots/'+file_name+'/'+plot_date+'/'
+    os.makedirs(plot_dir)
+    # fig1.savefig(plot_dir+'convergence_plot.png')      # does not work, must save manually!
+    fig2.savefig(plot_dir+'objective_plot.png')
+    fig3.savefig(plot_dir+'evaluations_plot.png')
 
     plt.show()
 #endregion
@@ -98,12 +97,14 @@ if __name__ == '__main__':
     time_end = dt.datetime.now()
     time_elapsed = time_end - time_start
 
-    print('#########################################')
+    print('#################################################')
+    print('')
     print('Hyperparameter optimization completed!')
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: {}'.format(time_elapsed))
     plot_results(params_search)
+
 
     print('Debug:\n$tensorboard --logdir=logs')
 

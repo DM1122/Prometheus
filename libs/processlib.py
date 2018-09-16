@@ -33,15 +33,9 @@ def splitter(data_features, data_labels, split):
 
 def normalizer(X_train, y_train, X_test, y_test):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
-    # y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
 
     X_train = X_scl.transform(X_train)
-    #y_train = y_scl.transform(y_train)
-    X_test = X_scl.transform(X_test)    
-    #y_test = y_scl.transform(y_test)
-
-    #global scl
-    #scl = y_scl
+    X_test = X_scl.transform(X_test)
 
     return X_train, y_train, X_test, y_test
 
@@ -65,7 +59,6 @@ def reshaper(data_raw, timesteps):
 
 
 def unshaper(data_raw):
-    # data = np.reshape(data, (data.shape[0]*data.shape[1], data.shape[2]))       # samples, features
     data_raw = np.reshape(data_raw, (data_raw.shape[0], data_raw.shape[1]))       # samples, features
 
     data = []
@@ -111,14 +104,10 @@ def unprocess(output_raw, y_raw, model):
     if model == 'RNN' or model == 'LSTM' or model == 'GRU':
         output_raw = unshaper(output_raw)
         y_raw = unshaper(y_raw)
-
-    # Unscale
-    # output = pd.DataFrame(scl.inverse_transform(output_raw), columns=['Output'])
-    # y = pd.DataFrame(scl.inverse_transform(y_raw), columns=['Truth'])
-
+    
     # Convert to df
     output = pd.DataFrame(output_raw, columns=['Output'])
-    y = pd.DataFrame(y_raw, columns=['Truth'])
+    y = pd.DataFrame(y_raw, columns=['Label'])
 
     # Concat dfs
     data_comp = pd.concat([output, y], axis=1, sort=False)

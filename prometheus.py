@@ -43,9 +43,9 @@ split_test = 0.2       # first
 split_val = 0.25       # second
 
 model_type = 'MLP'      # MLP/RNN/LSTM/GRU
-learn_rate = 0.000033083129600225145
+learn_rate = 0.00003
 n_layers = 3
-n_nodes = 100
+n_nodes = 256
 act = 'relu'
 dropout = 0.2
 
@@ -54,6 +54,7 @@ batch_size = 256
 sequence_length = 24       # hours in week
 #endregion
 
+file_name = os.path.basename(__file__)
 
 #region Functions
 def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act, dropout=dropout):
@@ -64,9 +65,10 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         data = NSRDBlib.get_data(features)      # get data
         X_train, y_train, X_test, y_test = processlib.process(data, features_label, features_label_shift, split_test, model_type, sequence_length)
 
-    print('##################################')
+    print('=================================================')
+    print('')
     print('Model Hyperparameters:')
-    print('Architecture: ', model_type)
+    print('architecture: ', model_type)
     print('learning rate: {}'.format(learn_rate))
     print('layers:', n_layers)
     print('nodes:', n_nodes)
@@ -94,9 +96,10 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     # Callback logging
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/{0}({1})_{2}_rate({3})_layers({4})_nodes({5})_drop({6})/'.format(log_date,os.path.basename(__file__),model_type,learn_rate,n_layers,n_nodes,dropout)
+    log_dir = './logs/'+file_name+'/'
+    log_file = log_dir+'{0}_{1}_rate({2})_layers({3})_nodes({4})_drop({5})/'.format(log_date,model_type,learn_rate,n_layers,n_nodes,dropout)
     callback_log = keras.callbacks.TensorBoard(
-        log_dir=log_dir,
+        log_dir=log_file,
         histogram_freq=5,
         batch_size=32,
         write_graph=True,
@@ -137,7 +140,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         from epimetheus import params_search_calls
         print('Search {0}/{1}'.format(call_count,params_search_calls))
 
-    return model, loss, log_dir
+    return model, loss, log_file
 
 
 def test_model(model):
@@ -148,29 +151,44 @@ def test_model(model):
     
     print('Plotting output...')
     output_train = model.predict(x=X_train, verbose=1)
-    output_validate = model.predict(x=X_train, verbose=1)
     output_test = model.predict(x=X_test, verbose=1)
 
-    data_comp_train = processlib.unprocess(output_train, y_train, model_type)
-    data_comp_validate = processlib.unprocess(output_validate, y_train, model_type)
+    data_comp_train_unsliced = processlib.unprocess(output_train, y_train, model_type)
+    print(data_comp_train_unsliced.shape)
+    print(len(data_comp_train_unsliced))
+
+    data_comp_train = data_comp_train_unsliced[:int(len(data_comp_train_unsliced) - len(data_comp_train_unsliced)*(split_val))]
+    print(data_comp_train.shape)
+
+    data_comp_validate = data_comp_train_unsliced[int(len(data_comp_train_unsliced) - len(data_comp_train_unsliced)*(split_val)):]
+    print(data_comp_validate.shape)
+
     data_comp_test = processlib.unprocess(output_test, y_test, model_type)
 
     matplotlib.style.use('classic')
-    fig = plt.figure('{0} Output: {1}'.format(model_type,features_label))
 
-    # ax1 = fig.add_subplot(3,1,1)
-    # ax2 = fig.add_subplot(3,1,2)
-    ax3 = fig.add_subplot(1,1,1)
-    
-    # ax1.set_title('Train')
-    # ax2.set_title('Validate')
-    ax3.set_title('Test')
+    # Generate training Figure
+    fig1 = plt.figure()
+    ax1 = fig1.add_subplot(1,1,1)
+    ax1.set_title('Training')
+    data_comp_train.plot(kind='line', ax=ax1)
+    data_comp_validate.plot(kind='line', ax=ax1)
+    fig1.tight_layout()
 
-    #data_comp_validate = data_comp_validate[len(data_comp_validate) - len(data_comp_validate)*int(split_val):]
+    # Generate testing Figure
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(1,1,1)
+    ax2.set_title('Testing')
+    data_comp_test.plot(kind='line', ax=ax2)
+    fig2.tight_layout()
 
-    # data_comp_train.plot(kind='line', ax=ax1)
-    # data_comp_validate.plot(kind='line', ax=ax2)
-    data_comp_test.plot(kind='line', ax=ax3)
+    # Save plot to disk
+    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    plot_dir = './plots/'+file_name+'/'+plot_date+'/'
+    os.makedirs(plot_dir)
+    fig1.savefig(plot_dir+'training_plot.png')
+    fig2.savefig(plot_dir+'testing_plot.png')
+
     plt.show()
 
 

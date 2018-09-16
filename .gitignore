@@ -3,3 +3,5 @@ logs/*
 .vscode/*
 
 **/__pycache__
+
+plots/*
