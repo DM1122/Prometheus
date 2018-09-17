@@ -54,11 +54,16 @@ def plot_3D(data):
 
     ax.set_xlabel('Hour')
     ax.set_ylabel('Day')
-    ax.set_zlabel('DHI')
+    ax.set_zlabel('DHI [W/$m^2$]')
+    ax.set_xlim3d(0, 24)
+    ax.set_ylim3d(0, 365)
+    # ax.view_init(30, -60)
 
     surf = ax.scatter(data['hour'], data['day'], data['dhi'], c=data['dhi'], cmap='inferno', linewidth=0.1, depthshade=True)
     fig.colorbar(surf)
+    
     fig.tight_layout()
+
 
     save_plot(fig)
     plt.show()

@@ -38,7 +38,8 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
     'cloud_type_10.0'
 ]
 features_label = 'dhi'
-features_label_shift = 24       # hourly resolution
+features_label_shift = 12       # hourly resolution
+features_drop_zeros = True
 split_test = 0.2       # first
 split_val = 0.25       # second
 
@@ -49,7 +50,7 @@ n_nodes = 256
 act = 'relu'
 dropout = 0.2
 
-n_epochs = 1
+n_epochs = 100
 batch_size = 256
 sequence_length = 24       # hours in week
 #endregion
@@ -63,7 +64,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         X_train
     except NameError:
         data = NSRDBlib.get_data(features)      # get data
-        X_train, y_train, X_test, y_test = processlib.process(data, features_label, features_label_shift, split_test, model_type, sequence_length)
+        X_train, y_train, X_test, y_test = processlib.process(data, features_label, features_label_shift, features_drop_zeros, split_test, model_type, sequence_length)
 
     print('=================================================')
     print('')

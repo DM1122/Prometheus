@@ -5,14 +5,31 @@ from sklearn.model_selection import train_test_split as TrainTestSplit
 from sklearn.preprocessing import MinMaxScaler
 
 #region Functions
-def labeller(data, label, shift):
+def labeller(data, label, shift, drop):
+
+    # drop zeros
+    if (drop):
+        print(data.shape)
+        data[label].replace(0, pd.np.nan, inplace=True)
+        data.dropna(axis=0, inplace=True)
+        print(data.shape)
+
     data['Label'] = data[label].shift(-shift)       # create label col
     data.dropna(inplace=True)       # drop gap created by shift length
-
     data_features = data.drop(columns='Label')      # create features df from all but labels col
     data_labels = data['Label']     # create labels df from labels col
 
     return data_features, data_labels
+
+# def dropper(data):
+#     print(data.shape) #####
+#     data = data[(data['Label'] != 0).all(1)]     # filter rows w/ zero(s)
+#     data['Label']
+#     data.dropna(inplace=True)
+#     data.reset_index(drop=True, inplace=True)
+#     print(data.shape) ####
+
+#     return data
 
 
 def splitter(data_features, data_labels, split):
@@ -77,10 +94,9 @@ def unshaper(data_raw):
     return data
 
 
-def process(data, label, shift, split, model, timesteps):
-
+def process(data, label, drop, shift, split, model, timesteps):
     # Label
-    data_features, data_labels = labeller(data, label, shift)
+    data_features, data_labels = labeller(data, label, shift, drop)
 
     # Split
     X_train, y_train, X_test, y_test = splitter(data_features, data_labels, split)
