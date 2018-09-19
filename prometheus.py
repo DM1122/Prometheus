@@ -43,16 +43,16 @@ features_drop_zeros = True
 split_test = 0.2       # first
 split_val = 0.25       # second
 
-model_type = 'MLP'      # MLP/RNN/LSTM/GRU
+model_type = 'GRU'      # MLP/RNN/LSTM/GRU
 learn_rate = 0.00003
-n_layers = 3
+n_layers = 1
 n_nodes = 256
 act = 'relu'
 dropout = 0.2
 
 n_epochs = 100
 batch_size = 256
-sequence_length = 24       # hours in week
+sequence_length = 1344       # hours in 2 months
 #endregion
 
 file_name = os.path.basename(__file__)
@@ -147,8 +147,8 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 def test_model(model):
     print('Testing model...')
     result = model.evaluate(x=X_test, y=y_test)
-    for name, value in zip(model.metrics_names, result):
-        print(name, value)
+    for metric, value in zip(model.metrics_names, result):
+        print('{0}: {1}'.format(metric, value))
     
     print('Plotting output...')
     output_train = model.predict(x=X_train, verbose=1)

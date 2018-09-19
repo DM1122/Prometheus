@@ -1,0 +1,1 @@
+# to be used solely for RNN architectures and use random batch generation (follow Hvass tut)

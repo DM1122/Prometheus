@@ -9,10 +9,8 @@ def labeller(data, label, shift, drop):
 
     # drop zeros
     if (drop):
-        print(data.shape)
         data[label].replace(0, pd.np.nan, inplace=True)
         data.dropna(axis=0, inplace=True)
-        print(data.shape)
 
     data['Label'] = data[label].shift(-shift)       # create label col
     data.dropna(inplace=True)       # drop gap created by shift length
