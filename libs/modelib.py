@@ -69,15 +69,47 @@ def create_model_LSTM(learn_rate, n_layers, n_nodes, act):
     return model
 
 
-def create_model_GRU(learn_rate, n_layers, n_nodes, act):
+def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
     model = keras.Sequential()
 
-    for i in range(n_layers):
-        model.add(keras.layers.GRU(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True, name='GRU_{}'.format(i+1)))
+    model.add(keras.layers.GRU(     # input layer
+            units=nodes,
+            activation=act,
+            dropout=droprate,
+            return_sequences=True,
+            input_shape=(None, inputs,),
+            name='GRU_0'))
 
-    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
+    for i in range(layers-1):        
+        model.add(keras.layers.GRU(
+            units=nodes,
+            activation=act,
+            recurrent_activation='hard_sigmoid',
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            recurrent_constraint=None,
+            bias_constraint=None,
+            dropout=droprate,
+            recurrent_dropout=0.0,
+            implementation=1,
+            return_sequences=True,
+            return_state=False,
+            go_backwards=False,
+            stateful=False,
+            unroll=False,
+            reset_after=False,
+            name='GRU_{}'.format(i+1)))
 
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
+    model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
+
+    optimizer = keras.optimizers.Adam(lr=rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model

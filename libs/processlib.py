@@ -1,14 +1,15 @@
 import numpy as np
 import pandas as pd
 import sklearn
-from sklearn.model_selection import train_test_split as TrainTestSplit
+#from sklearn.model_selection import train_test_split as TrainTestSplit
 from sklearn.preprocessing import MinMaxScaler
 
-#region Functions
-def labeller(data, label, shift, drop):
 
-    # drop zeros
-    if (drop):
+#region Functions
+def labeller(data, label, shift, dropzeros):
+
+    # Drop rows w/ zero in label col
+    if (dropzeros):
         data[label].replace(0, pd.np.nan, inplace=True)
         data.dropna(axis=0, inplace=True)
 
@@ -19,43 +20,50 @@ def labeller(data, label, shift, drop):
 
     return data_features, data_labels
 
-# def dropper(data):
-#     print(data.shape) #####
-#     data = data[(data['Label'] != 0).all(1)]     # filter rows w/ zero(s)
-#     data['Label']
-#     data.dropna(inplace=True)
-#     data.reset_index(drop=True, inplace=True)
-#     print(data.shape) ####
 
-#     return data
+def splitter(data_features, data_labels, split_valid, split_test):
 
+    # Convert dataset to numpy arrays
+    data_features = np.array(data_features)
+    data_labels = np.array(data_labels)
 
-def splitter(data_features, data_labels, split):
-    X_train, X_test, y_train, y_test = TrainTestSplit(data_features, data_labels, shuffle=False, test_size=split)
+    # Calculate train split from remaining percentage
+    split_train = 1 - (split_valid + split_test)
 
-    # convert all datasets to np arrays for compatability
-    X_train = np.array(X_train)
-    y_train = np.array(y_train)
-    X_test = np.array(X_test)
-    y_test = np.array(y_test)
+    # Calculate num of observations for each slice
+    n_train = int(len(data_features) * split_train)
+    n_valid = int(len(data_features) * split_valid)
+    n_test = int(len(data_features) * split_test)
 
-    # reshape labels 1D to 2D array
-    y_train = np.reshape(y_train, [-1,1])     
+    # Slice dataset into train, validate, test
+    X_train = data_features[0:n_train]
+    y_train = data_labels[0:n_train]
+
+    X_valid = data_features[n_train:n_train+n_valid]
+    y_valid = data_labels[n_train:n_train+n_valid]
+
+    X_test = data_features[n_train+n_valid:n_train+n_valid+n_test]
+    y_test = data_labels[n_train+n_valid:n_train+n_valid+n_test]
+
+    # Reshape labels 1D to 2D array
+    y_train = np.reshape(y_train, [-1,1])
+    y_valid = np.reshape(y_valid, [-1,1]) 
     y_test = np.reshape(y_test, [-1,1])
 
-    return X_train, y_train, X_test, y_test
+    return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
-def normalizer(X_train, y_train, X_test, y_test):
+def normalizer(X_train, X_valid, X_test):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
 
     X_train = X_scl.transform(X_train)
+    X_valid = X_scl.transform(X_valid)
     X_test = X_scl.transform(X_test)
 
-    return X_train, y_train, X_test, y_test
+    return X_train, X_valid, X_test
 
 
-def reshaper(data_raw, timesteps):
+def reshaper(data_raw, timesteps):      # WIP
     crop = data_raw.shape[0]-data_raw.shape[0]%timesteps        # modulus
     data_raw = data_raw[:crop]      # crop to length divisble by timesteps
 
@@ -73,7 +81,7 @@ def reshaper(data_raw, timesteps):
     return data
 
 
-def unshaper(data_raw):
+def unshaper(data_raw):     # WIP
     data_raw = np.reshape(data_raw, (data_raw.shape[0], data_raw.shape[1]))       # samples, features
 
     data = []
@@ -92,27 +100,34 @@ def unshaper(data_raw):
     return data
 
 
-def process(data, label, drop, shift, split, model, timesteps):
+def process(data, label, shift, dropzeros, split_valid, split_test, model, timesteps):
+    '''
+    Wrapper function for all processing steps.
+    '''
+    
     # Label
-    data_features, data_labels = labeller(data, label, shift, drop)
+    data_features, data_labels = labeller(data, label, shift, dropzeros)
 
     # Split
-    X_train, y_train, X_test, y_test = splitter(data_features, data_labels, split)
+    X_train, y_train, X_valid, y_valid, X_test, y_test = splitter(data_features, data_labels, split_valid, split_test)
 
     # Normalize
-    X_train, y_train, X_test, y_test = normalizer(X_train, y_train, X_test, y_test)
+    X_train, X_valid, X_test = normalizer(X_train, X_valid, X_test)
 
-    # Reshape RNNs
-    if model == 'RNN' or model == 'LSTM' or model == 'GRU':
-        X_train = reshaper(X_train, timesteps)
-        y_train = reshaper(y_train, timesteps)
-        X_test = reshaper(X_test, timesteps)
-        y_test = reshaper(y_test, timesteps)
+    # # Reshape (RNNs only)
+    # if model == 'RNN' or model == 'LSTM' or model == 'GRU':
+    #     X_train = reshaper(X_train, timesteps)
+    #     y_train = reshaper(y_train, timesteps)
+    #     X_test = reshaper(X_test, timesteps)
+    #     y_test = reshaper(y_test, timesteps)
     
-    return X_train, y_train, X_test, y_test
+    return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
-def unprocess(output_raw, y_raw, model):
+def unprocess(output_raw, y_raw, model):        # WIP
+    '''
+    Wrapper function for all unprocessing steps.
+    '''
 
     # Unshape RNNs
     if model == 'RNN' or model == 'LSTM' or model == 'GRU':

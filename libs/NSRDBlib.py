@@ -54,7 +54,7 @@ def preprocess_data():     # process and combine yearly data to comp
     data['cloud_type'].fillna(method='ffill', inplace=True)      # categorical forward fill
     data.interpolate(method='linear', axis=0, limit_area='inside', inplace=True)        # linear interpolation
 
-    # categorical encoding
+    # Categorical encoding
     data = pd.get_dummies(data, dummy_na=False, columns=['cloud_type'])     # cols 0-10 are created but cloud_type_5 does not exist, therefore cloudtypes are 0-9
 
     print(data.head())
