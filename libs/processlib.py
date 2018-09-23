@@ -51,17 +51,23 @@ def splitter(data_features, data_labels, split_valid, split_test):
     return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
-def normalizer(X_train, X_valid, X_test):
+def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
+    y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
 
     X_train = X_scl.transform(X_train)
     X_valid = X_scl.transform(X_valid)
     X_test = X_scl.transform(X_test)
 
-    return X_train, X_valid, X_test
+    if (labelscl):
+        y_train = y_scl.transform(y_train)
+        y_valid = y_scl.transform(y_valid)
+        y_test = y_scl.transform(y_test)
+
+    return X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl
 
 
-def process(data, label, shift, dropzeros, split_valid, split_test, model, timesteps):
+def process(data, label, shift, dropzeros, labelscl, split_valid, split_test, model, timesteps):
     '''
     Wrapper function for all processing steps.
     '''
@@ -73,6 +79,6 @@ def process(data, label, shift, dropzeros, split_valid, split_test, model, times
     X_train, y_train, X_valid, y_valid, X_test, y_test = splitter(data_features, data_labels, split_valid, split_test)
 
     # Normalize
-    X_train, X_valid, X_test = normalizer(X_train, X_valid, X_test)
+    X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl = normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl)
     
-    return X_train, y_train, X_valid, y_valid, X_test, y_test
+    return X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl

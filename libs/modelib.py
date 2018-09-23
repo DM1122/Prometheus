@@ -77,10 +77,9 @@ def create_model_RNN(rate, layers, nodes, act, droprate, inputs, outputs):
     
     model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+    opt = keras.optimizers.Adam(lr=rate)
 
-    return model
+    return model, opt
 
 
 def create_model_LSTM(rate, layers, nodes, act, droprate, inputs, outputs):
@@ -125,10 +124,9 @@ def create_model_LSTM(rate, layers, nodes, act, droprate, inputs, outputs):
 
     model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
-
-    return model
+    opt = keras.optimizers.Adam(lr=rate)
+    
+    return model, opt
 
 
 def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
@@ -173,7 +171,6 @@ def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
 
     model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
-
-    return model
+    opt = keras.optimizers.Adam(lr=rate)
+    
+    return model, opt

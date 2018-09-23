@@ -12,8 +12,8 @@ np.random.seed(123)
 tf.set_random_seed(123)
 
 #region Hyperparams
-model_type = 'LSTM'      # RNN/LSTM/GRU
-n_epochs = 100
+model_type = 'RNN'      # RNN/LSTM/GRU
+n_epochs = 1
 n_epoch_steps = 8
 learn_rate = 0.0003
 n_layers = 3
@@ -47,6 +47,7 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
 ]
 features_label = 'dhi'
 features_label_shift = 12       # hours
+features_label_scale = True
 features_dropzeros = True       # whether to drop all rows in data for which label is 0
 
 valid_split = 0.2
@@ -81,21 +82,63 @@ def batch_generator(x, y, batch_size, timesteps):
         yield (x_batch, y_batch)
 
 
+def calculate_loss(y_true, y_pred):
+    '''
+    Calculate the MSE between y_true and y_pred,
+    but ignore the beginning "warmup" part of the sequences.
+
+    y_true is the desired output.
+    y_pred is the model's output.
+    '''
+
+    # The shape of both input tensors are:
+    # [batch_size, sequence_length, num_y_signals].
+
+    # Ignore the "warmup" parts of the sequences
+    # by taking slices of the tensors.
+    # y_true_slice = y_true[:, sequence_length:, :]
+    # y_pred_slice = y_pred[:, sequence_length:, :]
+
+    # These sliced tensors both have this shape:
+    # [batch_size, sequence_length - warmup_steps, num_y_signals]
+
+    # Calculate the MSE loss for each value in these tensors.
+    # This outputs a 3-rank tensor of the same shape.
+    # print(y_true.shape)
+    # print(y_pred.shape)
+
+    # if (features_label_scale):      # unscale datasets (does not work)
+
+    #     y_true = y_scl.inverse_transform(y_test)
+    #     y_pred = y_scl.inverse_transform(y_pred)
+
+    loss = tf.losses.mean_squared_error(labels=y_true, predictions=y_pred)
+
+    # Keras may reduce this across the first axis (the batch)
+    # but the semantics are unclear, so to be sure we use
+    # the loss across the entire tensor, we reduce it to a
+    # single scalar with the mean function.
+    loss_mse_mean = tf.reduce_mean(loss)
+
+    return loss_mse_mean
+
+
 def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=activation, dropout_rate=dropout_rate, batch_size=batch_size, sequence_length=sequence_length):
     '''
     Model generator and trainer function. Can be called from external hyperparam optimizer.
     '''
     #region Data handling
-    global X_train, y_train, X_valid, y_valid, X_test, y_test       # prevents data from being reprocessed every call
+    global X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl       # prevents data from being reprocessed every call
     try:
         X_train
     except NameError:
         data = NSRDBlib.get_data(features)
-        X_train, y_train, X_valid, y_valid, X_test, y_test = processlib.process(
+        X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl = processlib.process(
             data=data,
             label=features_label,
             shift=features_label_shift,
             dropzeros=features_dropzeros,
+            labelscl=features_label_scale,
             split_valid=valid_split,
             split_test=test_split,
             model=model_type,
@@ -104,13 +147,15 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     #region Model instantiation
     if model_type == 'RNN':
-        model = modelib.create_model_RNN(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
+        model, opt = modelib.create_model_RNN(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     elif model_type == 'LSTM':
-        model = modelib.create_model_LSTM(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
+        model, opt = modelib.create_model_LSTM(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     elif model_type == 'GRU':
-        model = modelib.create_model_GRU(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
+        model, opt = modelib.create_model_GRU(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     else:
         raise ValueError('Invalid model type: {}'.format(model_type))
+    
+    model.compile(optimizer=opt, loss=calculate_loss, metrics=['mae'])
     #endregion
 
     #region Callbacks
@@ -241,10 +286,17 @@ def test_model(model):
     ax = fig.add_subplot(111)
     ax.set_xlabel('Index')
     ax.set_ylabel('DHI [W/$m^2$]')
+    
 
     # Plot and compare two signals
+    if (features_label_scale):      # unscale datasets
+        global y_test
+        y_test = y_scl.inverse_transform(y_test)
+        y_pred = y_scl.inverse_transform(y_pred)
+
     plt.plot(y_test, label='Label')
     plt.plot(y_pred, label='Output')
+    plt.axvspan(0, sequence_length, facecolor='black', alpha=0.15)
 
     fig.tight_layout()
     plt.legend()
