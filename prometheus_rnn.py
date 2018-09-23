@@ -12,14 +12,14 @@ np.random.seed(123)
 tf.set_random_seed(123)
 
 #region Hyperparams
-model_type = 'GRU'      # RNN/LSTM/GRU
+model_type = 'LSTM'      # RNN/LSTM/GRU
 n_epochs = 100
 n_epoch_steps = 8
-learn_rate = 0.005
+learn_rate = 0.0003
 n_layers = 3
-n_nodes = 128
-activation = 'relu'
-dropout_rate = 0.2
+n_nodes = 256
+activation = 'tanh'
+dropout_rate = 0.0
 batch_size = 256
 sequence_length = 336       # one month in hrs (assuming 12h day)
 
@@ -104,9 +104,9 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     #region Model instantiation
     if model_type == 'RNN':
-        model = modelib.create_model_RNN(learn_rate, n_layers, n_nodes, activation, X_train.shape[2], X_train.shape[1])        # WIP
+        model = modelib.create_model_RNN(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     elif model_type == 'LSTM':
-        model = modelib.create_model_LSTM(learn_rate, n_layers, n_nodes, activation)       # WIP
+        model = modelib.create_model_LSTM(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     elif model_type == 'GRU':
         model = modelib.create_model_GRU(rate=learn_rate, layers=n_layers, nodes=n_nodes, act=activation, droprate=dropout_rate, inputs=X_train.shape[1], outputs=y_train.shape[1])
     else:

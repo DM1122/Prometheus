@@ -2,8 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 
-#region Functions
-def create_model_linear(learn_rate, n_features):
+def create_model_linear(learn_rate, n_features):        # WIP
     model = keras.Sequential()
 
     model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
@@ -15,7 +14,7 @@ def create_model_linear(learn_rate, n_features):
     return model
 
 
-def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):
+def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):        # WIP
     model = keras.Sequential()
     
     # model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
@@ -39,31 +38,94 @@ def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):
     return model
 
 
-def create_model_RNN(learn_rate, n_layers, n_nodes, act, n_features, sequence_length):
+def create_model_RNN(rate, layers, nodes, act, droprate, inputs, outputs):
     model = keras.Sequential()
     
-    # model.add(keras.layers.InputLayer(input_shape=(sequence_length, n_features, )))
+    nodes_per_layer = nodes // layers
 
-    for i in range(n_layers):
-        model.add(keras.layers.SimpleRNN(units=n_nodes, activation=act, return_sequences=True, name='RNN_{}'.format(i+1)))
+    model.add(keras.layers.SimpleRNN(
+        units=nodes_per_layer,
+        activation=act,
+        dropout=droprate,
+        return_sequences=True,
+        input_shape=(None, inputs,),
+        name='RNN_0'))
+
+    for i in range(layers-1):
+        model.add(keras.layers.SimpleRNN(
+            units=nodes_per_layer,
+            activation=act,
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            kernel_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            recurrent_constraint=None,
+            bias_constraint=None,
+            dropout=droprate,
+            recurrent_dropout=0.0,
+            return_sequences=True,
+            return_state=False,
+            go_backwards=False,
+            stateful=False,
+            unroll=False,
+            name='RNN_{}'.format(i+1)))
     
-    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
+    model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
+    optimizer = keras.optimizers.Adam(lr=rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model
 
 
-def create_model_LSTM(learn_rate, n_layers, n_nodes, act):
+def create_model_LSTM(rate, layers, nodes, act, droprate, inputs, outputs):
     model = keras.Sequential()
 
-    for i in range(n_layers):
-        model.add(keras.layers.LSTM(units=n_nodes, activation=act, recurrent_activation='hard_sigmoid', return_sequences=True, name='LSTM_{}'.format(i+1)))
+    nodes_per_layer = nodes // layers
 
-    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
+    model.add(keras.layers.LSTM(
+        units=nodes_per_layer,
+        activation=act,
+        dropout=droprate,
+        return_sequences=True,
+        input_shape=(None, inputs,),
+        name='LSTM_0'))
 
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
+    for i in range(layers-1):
+        model.add(keras.layers.LSTM(
+            units=nodes_per_layer,
+            activation=act,
+            recurrent_activation='hard_sigmoid',
+            use_bias=True,
+            kernel_initializer='glorot_uniform',
+            recurrent_initializer='orthogonal',
+            bias_initializer='zeros',
+            unit_forget_bias=True,
+            kernel_regularizer=None,
+            recurrent_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            recurrent_constraint=None,
+            bias_constraint=None,
+            dropout=droprate,
+            recurrent_dropout=0.0,
+            implementation=1,
+            return_sequences=True,
+            return_state=False,
+            go_backwards=False,
+            stateful=False,
+            unroll=False,
+            name='LSTM_{}'.format(i+1)))
+
+    model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
+
+    optimizer = keras.optimizers.Adam(lr=rate)
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model
@@ -74,7 +136,7 @@ def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
 
     nodes_per_layer = nodes // layers
 
-    model.add(keras.layers.GRU(     # input layer
+    model.add(keras.layers.GRU(
             units=nodes_per_layer,
             activation=act,
             dropout=droprate,
@@ -115,4 +177,3 @@ def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
     model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
     return model
-#endregion
