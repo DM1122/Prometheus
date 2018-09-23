@@ -1,6 +1,8 @@
 import datetime as dt
 import libs
 from libs import modelib, NSRDBlib, processlib
+import matplotlib
+from matplotlib import pyplot as plt
 import numpy as np
 import os
 import tensorflow as tf
@@ -11,10 +13,10 @@ tf.set_random_seed(123)
 
 #region Hyperparams
 model_type = 'GRU'      # RNN/LSTM/GRU
-n_epochs = 1
+n_epochs = 100
 n_epoch_steps = 8
-learn_rate = 0.0003
-n_layers = 1
+learn_rate = 0.005
+n_layers = 3
 n_nodes = 128
 activation = 'relu'
 dropout_rate = 0.2
@@ -133,9 +135,11 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         verbose=1,
         mode='auto',
         baseline=None)     # check for restore_best_weights in next release
+    
+    callback_NaN = keras.callbacks.TerminateOnNaN()
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/prometheus_rnn/{0}_{1}_rate({2})_layers({3})_nodes({4})_drop({5})_batch{6}_seq{7}/'.format(
+    log_dir = './logs/prometheus_rnn/{0}_{1}_rate({2})_layers({3})_nodes({4})_drop({5})_batch({6})_seq({7})/'.format(
         log_date,
         model_type,
         learn_rate,
@@ -153,7 +157,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         write_grads=True,
         write_images=False)
 
-    callbacks = [callback_checkpoint, callback_early_stopping, callback_tensorboard]
+    callbacks = [callback_checkpoint, callback_early_stopping, callback_NaN, callback_tensorboard]
 
     global call_count       # keep track of hyperparam search calls
     try:
@@ -173,12 +177,9 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('activation: ', activation)
     print('dropout: ', dropout_rate)
     print('batch size: ', batch_size)
-    print('sequence length: ', sequence_length)    
+    print('sequence length: ', sequence_length)
 
     batchgen = batch_generator(x=X_train, y=y_train, batch_size=batch_size, timesteps=sequence_length)      # create batch generator (X_batch, y_batch = next(batchgen))
-    X_batch, y_batch = next(batchgen)
-    print(X_batch.shape)
-    print(y_batch.shape)
 
     time_start = dt.datetime.now()
 
@@ -215,7 +216,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     for metric, val in zip(model.metrics_names, result):
         if metric == 'loss':
-            loss_valid = loss       # get validation loss from metrics
+            loss_valid = val       # get validation loss from metrics
 
     print('Validation loss: ', loss_valid)
     print('Elapsed time: ', time_elapsed)
@@ -226,64 +227,41 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
     return model, loss_valid, log_dir
 
-# def test_model(model):
-#     print('Testing model')
-#     return
 
-# def plot_comparison(start_idx, length=100):
-#     '''
-#     Plot the predicted and true output-signals.
-    
-#     :param start_idx: Start-index for the time-series.
-#     :param length: Sequence-length to process and plot.
-#     :param train: Boolean whether to use training- or test-set.
-#     '''
-    
-#     # Use test-data.
-#     x = x_test_scaled
-#     y_true = y_test
-    
-#     # End-index for the sequences.
-#     end_idx = start_idx + length
-    
-#     # Select the sequences from the given start-index and
-#     # of the given length.
-#     x = x[start_idx:end_idx]
-#     y_true = y_true[start_idx:end_idx]
-    
-#     # Input-signals for the model.
-#     x = np.expand_dims(x, axis=0)
+def test_model(model):
+    print('Testing model...')
+    y_pred = model.predict(x=np.expand_dims(X_test, axis=0), batch_size=None, verbose=0, steps=None)        # predict using test data
+    y_pred = y_pred.reshape(y_pred.shape[1],1)
 
-#     # Use the model to predict the output-signals.
-#     y_pred = model.predict(x)
-    
-#     # The output of the model is between 0 and 1.
-#     # Do an inverse map to get it back to the scale
-#     # of the original data-set.
-#     y_pred_rescaled = y_scaler.inverse_transform(y_pred[0])
-    
-#     # For each output-signal.
-#     for signal in range(len(target_names)):
-#         # Get the output-signal predicted by the model.
-#         signal_pred = y_pred_rescaled[:, signal]
-        
-#         # Get the true output-signal from the data-set.
-#         signal_true = y_true[:, signal]
+    #region Plotting
+    matplotlib.style.use('classic')
 
-#         # Make the plotting-canvas bigger.
-#         plt.figure(figsize=(15,5))
-        
-#         # Plot and compare the two signals.
-#         plt.plot(signal_true, label='true')
-#         plt.plot(signal_pred, label='pred')
-        
-#         # Plot grey box for warmup-period.
-#         p = plt.axvspan(0, warmup_steps, facecolor='black', alpha=0.15)
-        
-#         # Plot labels etc.
-#         plt.ylabel(target_names[signal])
-#         plt.legend()
-#         plt.show()
+    # Create figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel('Index')
+    ax.set_ylabel('DHI [W/$m^2$]')
+
+    # Plot and compare two signals
+    plt.plot(y_test, label='Label')
+    plt.plot(y_pred, label='Output')
+
+    fig.tight_layout()
+    plt.legend()
+
+    save_plot(fig)
+    plt.show()
+    #endregion
+
+
+def save_plot(fig):
+    # Save plot to disk
+    file_name = os.path.basename(__file__)
+    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    plot_dir = './plots/'+file_name+'/'+plot_date+'/'
+    os.makedirs(plot_dir)
+    fig.savefig(plot_dir+'output_plot.png')
+    print('Saved plot to disk')
 
 
 if __name__ == '__main__':

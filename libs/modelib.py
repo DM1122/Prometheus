@@ -72,8 +72,10 @@ def create_model_LSTM(learn_rate, n_layers, n_nodes, act):
 def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
     model = keras.Sequential()
 
+    nodes_per_layer = nodes // layers
+
     model.add(keras.layers.GRU(     # input layer
-            units=nodes,
+            units=nodes_per_layer,
             activation=act,
             dropout=droprate,
             return_sequences=True,
@@ -82,7 +84,7 @@ def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
 
     for i in range(layers-1):        
         model.add(keras.layers.GRU(
-            units=nodes,
+            units=nodes_per_layer,
             activation=act,
             recurrent_activation='hard_sigmoid',
             use_bias=True,
