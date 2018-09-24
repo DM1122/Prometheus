@@ -12,16 +12,16 @@ np.random.seed(123)
 tf.set_random_seed(123)
 
 #region Hyperparams
-model_type = 'RNN'      # RNN/LSTM/GRU
-n_epochs = 1
-n_epoch_steps = 8
-learn_rate = 0.0003
-n_layers = 3
-n_nodes = 256
+model_type = 'GRU'      # RNN/LSTM/GRU
+n_epochs = 20
+n_epoch_steps = 100
+learn_rate = 0.001
+n_layers = 1
+n_nodes = 512
 activation = 'tanh'
 dropout_rate = 0.0
 batch_size = 256
-sequence_length = 336       # one month in hrs (assuming 12h day)
+sequence_length = 672       # one month in hrs (assuming 12h day)
 
 features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
     'ghi_clear',
@@ -82,7 +82,7 @@ def batch_generator(x, y, batch_size, timesteps):
         yield (x_batch, y_batch)
 
 
-def calculate_loss(y_true, y_pred):
+def calculate_loss(y_true, y_pred):     # WIP
     '''
     Calculate the MSE between y_true and y_pred,
     but ignore the beginning "warmup" part of the sequences.
@@ -184,10 +184,11 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     callback_NaN = keras.callbacks.TerminateOnNaN()
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/prometheus_rnn/{0}_{1}_rate({2})_layers({3})_nodes({4})_drop({5})_batch({6})_seq({7})/'.format(
+    log_dir = './logs/prometheus_rnn/{0}_{1}_rate({2})_act({3})_layers({4})_nodes({5})_drop({6})_batch({7})_seq({8})/'.format(
         log_date,
         model_type,
         learn_rate,
+        act,
         n_layers,
         n_nodes,
         dropout_rate,
