@@ -46,6 +46,7 @@ def plot_opt(search, dims):
 
     return fig1, fig2, fig3
 
+
 def plot_opt_single(search, dim):
     '''
     Plots skopt hyperam optimization results for single dim
@@ -65,3 +66,24 @@ def plot_opt_single(search, dim):
     fig3.tight_layout()
 
     return fig1, fig2, fig3
+
+
+def plot_pred_warmup(lbl, out, warmup, xlbl, ylbl):
+    
+    matplotlib.style.use('classic')
+
+    # Create figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel(xlbl)
+    ax.set_ylabel(ylbl)
+    
+    # Plot and compare two signals
+    plt.plot(lbl, label='Label')
+    plt.plot(out, label='Output')
+    plt.axvspan(0, warmup, facecolor='black', alpha=0.15)
+
+    fig.tight_layout()
+    plt.legend()
+
+    return fig

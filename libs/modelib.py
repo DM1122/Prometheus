@@ -1,5 +1,6 @@
 import distutils
 import os
+import numpy as np
 import shutil
 import tensorflow as tf
 from tensorflow import keras
@@ -267,3 +268,83 @@ def update_best_model(model, loss, log, id):
                 shutil.rmtree('./logs/'+id+'/'+l+'/')
     else:
         shutil.rmtree(log)      # delete current log
+
+
+def batch_generator(x, y, batch_size, timesteps):
+    '''
+    Generator function for creating random batches of data.
+
+    Author: Hvass-Labs
+    Modifier: DM1122
+
+    Args:
+      x : feature dataset
+      y : label dataset
+      batch_size : number of samples
+      timesteps : sequence length
+    '''
+
+    # Infinite loop
+    while True:
+        # Allocate new empty array for batch of input signals
+        x_batch = np.zeros(shape=(batch_size, timesteps, x.shape[1]))
+
+        # Allocate new empty array for batch of output signals
+        y_batch = np.zeros(shape=(batch_size, timesteps, y.shape[1]))
+
+        # Fill batch arrays with random sequences of data
+        for i in range(batch_size):
+            # Get random start index
+            idx = np.random.randint(x.shape[0] - timesteps)
+            
+            # Copy the sequences of data starting at idx
+            x_batch[i] = x[idx:idx+timesteps]
+            y_batch[i] = y[idx:idx+timesteps]
+        
+        yield (x_batch, y_batch)
+
+
+def calculate_loss_warmup(y_true, y_pred, warmup):     # WIP
+    '''
+    Calculate the MSE between y_true and y_pred,
+    ignoring the beginning "warmup" part of the sequences.
+
+    Author: Hvass-Labs
+    Modifier: DM1122
+
+    Args:
+      y_true : desired output
+      y_pred : model output
+      warmup : length of sequence to ignore
+    '''
+
+    # The shape of both input tensors are:
+    # [batch_size, sequence_length, num_y_signals].
+
+    # Ignore the "warmup" parts of the sequences
+    # by taking slices of the tensors.
+    # y_true_slice = y_true[:, warmup:, :]
+    # y_pred_slice = y_pred[:, warmup:, :]
+
+    # These sliced tensors both have this shape:
+    # [batch_size, sequence_length - warmup_steps, num_y_signals]
+
+    # Calculate the MSE loss for each value in these tensors.
+    # This outputs a 3-rank tensor of the same shape.
+    # print(y_true.shape)
+    # print(y_pred.shape)
+
+    # if (features_label_scale):      # unscale datasets (does not work)
+
+    #     y_true = y_scl.inverse_transform(y_test)
+    #     y_pred = y_scl.inverse_transform(y_pred)
+
+    loss = tf.losses.mean_squared_error(labels=y_true, predictions=y_pred)
+
+    # Keras may reduce this across the first axis (the batch)
+    # but the semantics are unclear, so to be sure we use
+    # the loss across the entire tensor, we reduce it to a
+    # single scalar with the mean function.
+    loss_warmup = tf.reduce_mean(loss)
+
+    return loss_warmup

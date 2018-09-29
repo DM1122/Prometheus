@@ -1,7 +1,6 @@
 import datetime as dt
 import libs
 from libs import figurelib, modelib, NSRDBlib, processlib
-import h5py
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
@@ -65,6 +64,7 @@ test_split = 0.2
 
 file_name = os.path.basename(__file__)
 
+
 @skopt.utils.use_named_args(dimensions=params)
 def fitness(learn_rate):
     global call_count       # keep track of hyperparam search calls
@@ -111,7 +111,7 @@ def fitness(learn_rate):
     time_elapsed = time_end - time_start
     call_count += 1
 
-    print('Regressor instance training completed!')
+    print('Multiregressor training completed!')
     #endregion
 
     #region Validation
@@ -167,7 +167,7 @@ if __name__ == '__main__':
 
     print('#################################################')
     print('')
-    print('Multiregression optimization completed!')
+    print('Multiregressor optimization completed!')
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: ', time_opt_elapsed)
@@ -177,14 +177,14 @@ if __name__ == '__main__':
     fig1, fig2, fig3 = figurelib.plot_opt_single(search=params_search, dim='learn_rate')
 
     plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    figurelib.save_fig(fig=fig1, name='convergence_plot.png', date=plot_date, id='multiregressor.py')
-    figurelib.save_fig(fig=fig2, name='objective_plot.png', date=plot_date, id='multiregressor.py')
-    figurelib.save_fig(fig=fig3, name='evaluations_plot.png', date=plot_date, id='multiregressor.py')
+    figurelib.save_fig(fig=fig1, name='convergence_plot.png', date=plot_date, id=file_name)
+    figurelib.save_fig(fig=fig2, name='objective_plot.png', date=plot_date, id=file_name)
+    figurelib.save_fig(fig=fig3, name='evaluations_plot.png', date=plot_date, id=file_name)
 
     plt.show()
     #endregion
 
-    #region Structure
+    #region Weights
     print('Reading model weights...')
 
     model = keras.models.load_model('./models/'+file_name+'/best/model.keras')
