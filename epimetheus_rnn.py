@@ -111,5 +111,5 @@ if __name__ == '__main__':
     print('Hyperparameter optimization completed!')
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
-    print('Elapsed time: {}'.format(time_elapsed))
+    print('Elapsed time: ', time_elapsed)
     plot_results(params_search)

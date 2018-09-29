@@ -140,9 +140,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
             dropzeros=features_dropzeros,
             labelscl=features_label_scale,
             split_valid=valid_split,
-            split_test=test_split,
-            model=model_type,
-            timesteps=sequence_length)
+            split_test=test_split)
     #endregion
 
     #region Model instantiation
@@ -305,16 +303,6 @@ def test_model(model):
     save_plot(fig)
     plt.show()
     #endregion
-
-
-def save_plot(fig):
-    # Save plot to disk
-    file_name = os.path.basename(__file__)
-    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    plot_dir = './plots/'+file_name+'/'+plot_date+'/'
-    os.makedirs(plot_dir)
-    fig.savefig(plot_dir+'output_plot.png')
-    print('Saved plot to disk')
 
 
 if __name__ == '__main__':

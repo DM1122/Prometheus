@@ -1,10 +1,11 @@
 import datetime as dt
-import h5py
 import libs
-from libs import modelib
+from libs import figurelib, modelib, NSRDBlib, processlib
+import h5py
+import matplotlib
+from matplotlib import pyplot as plt
 import numpy as np
 import os
-import prometheus
 import skopt
 import tensorflow as tf
 from tensorflow import keras
@@ -12,139 +13,183 @@ from tensorflow import keras
 np.random.seed(123)
 tf.set_random_seed(123)
 
+
 #region Metaparams
-params_search_calls = 500        # >= 11
-learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
+params_search_calls = 100
+
+learn_rate_space = skopt.space.Real(low=1e-10, high=1e-0, prior='log-uniform', name='learn_rate')
+
 params = [learn_rate_space]
-params_init = [3e-5]
+params_init = [1e-3]
 #endregion
 
 #region Hyperparams
 n_epochs = 100
-batch_size = 128
-split_test = 0.2
-split_val = 0.25
+batch_size = 256
+
+features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
+    'ghi_clear',
+    'dhi_clear',
+    'dew_point',
+    'precipitation',
+    'dhi',
+    'temp',
+    'ghi',
+    'dni_clear',
+    'zenith_angle',
+    'dni',
+    'pressure',
+    'humidity_rel',
+    'albedo_sur',
+    'wind_speed',
+    'wind_dir',
+    'cloud_type_0.0',
+    'cloud_type_1.0',
+    'cloud_type_2.0',
+    'cloud_type_3.0',
+    'cloud_type_4.0',
+    'cloud_type_6.0',
+    'cloud_type_7.0',
+    'cloud_type_8.0',
+    'cloud_type_9.0',
+    'cloud_type_10.0'
+]
+features_label = 'dhi'
+features_label_shift = 12
+features_label_scale = False
+features_dropzeros = True
+
+valid_split = 0.2
+test_split = 0.2
 #endregion
 
+file_name = os.path.basename(__file__)
 
 @skopt.utils.use_named_args(dimensions=params)
 def fitness(learn_rate):
-    global X_train, y_train, X_test, y_test
+    global call_count       # keep track of hyperparam search calls
     try:
-        X_train
+        call_count
     except NameError:
-        X_train, y_train, X_test, y_test = prometheus.process_data()
+        call_count = 0
 
-    print('##################################')
+    #region Model instantiation
+    regressor, opt = modelib.create_model_linear(rate=learn_rate, inputs=X_train.shape[1])
+    regressor.compile(optimizer=opt, loss='mse', metrics=['mae'])
+
+    log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    log_dir = './logs/'+file_name+'/{0}_rate({1})/'.format(log_date, learn_rate)
+    callbacks = modelib.callbacks(log=log_dir, id=file_name)
+    #endregion
+
+    #region Training
+    print('=================================================')
+    print('')
     print('Regressor Hyperparameters:')
-    print('learning rate: {}'.format(learn_rate))
+    print('learning rate: ', learn_rate)
 
-    # Model instantiation
-    regressor = modelib.create_model_linear(learn_rate, X_train.shape[1])
-
-    # Run regressor
     time_start = dt.datetime.now()
-    history = regressor.fit(        # train regressor
+
+    regressor.fit(
         x=X_train,
         y=y_train,
         batch_size=batch_size,
         epochs=n_epochs,
         verbose=1,
-        validation_split=split_val,
-        shuffle=False
-    )
+        callbacks=callbacks,
+        validation_split=0.0,
+        validation_data=(X_valid, y_valid),
+        shuffle=False,
+        class_weight=None,
+        sample_weight=None,
+        initial_epoch=0,
+        steps_per_epoch=None,
+        validation_steps=None)
+
+
     time_end = dt.datetime.now()
     time_elapsed = time_end - time_start
-    loss = history.history['val_loss'][-1]
+    call_count += 1
 
-    print('Multiregression completed!')
-    print("Validation loss: {0:.2%}".format(loss))
-    print('Elapsed time: {}'.format(time_elapsed))
+    print('Regressor instance training completed!')
+    #endregion
 
-    update_best_regressor(regressor, loss)
+    #region Validation
+    regressor.load_weights('./models/'+file_name+'/model.keras')        # restore best weights
     
+    result = regressor.evaluate(x=X_valid, y=y_valid, batch_size=None, verbose=0, sample_weight=None, steps=None)
+
+    for metric, val in zip(regressor.metrics_names, result):
+        if metric == 'loss':
+            loss = val
+
+    print('Validation loss: ', loss)
+    print('Elapsed time: ', time_elapsed)
+    print('Search {0}/{1}'.format(call_count, params_search_calls))
+
+    modelib.update_best_model(model=regressor, loss=loss, log=log_dir, id=file_name)
+    #endregion
+
     del regressor
     keras.backend.clear_session()
 
     return loss
 
 
-def update_best_regressor(regressor, loss):
-    global loss_best
-    try:
-        loss_best
-    except NameError:
-        loss_best = loss
-
-    if loss <= loss_best:
-        if not os.path.exists('./models/'+os.path.basename(__file__)):
-            os.makedirs('./models/'+os.path.basename(__file__))
-
-        print('New best!')
-        loss_best = loss
-        regressor.save_weights('./models/'+os.path.basename(__file__)+'/regressor.h5')
-
-
-def read_regressor_attributes():
-    '''
-    Prints out the structure of HDF5 file.
-
-    Args:
-      weight_file_path (str) : Path to the file to analyze
-
-    Author(s): Moto Mthrok, Mjshi Jewes
-    '''
-
-    weight_file_path = './models/'+os.path.basename(__file__)+'/regressor.h5'
-
-    f = h5py.File(weight_file_path)
-    try:
-        if len(f.attrs.items()):
-            print('{} contains: '.format(weight_file_path))
-            print('Root attributes:')
-        for key, value in f.attrs.items():
-            print('  {}: {}'.format(key, value))
-
-        if len(f.items())==0:
-            return 
-
-        for layer, g in f.items():
-            print('  {}'.format(layer))
-            print('    Attributes:')
-            for key, value in g.attrs.items():
-                print("      {}: {}".format(key, value))
-
-            print('    Dataset:')
-            for p_name in g.keys():
-                param = g[p_name]
-                subkeys = param.keys()
-                for k_name in param.keys():
-                    print('      {}/{}: {}'.format(p_name, k_name, param.get(k_name)[:]))
-    finally:
-        f.close()
-
-#endregion
-
-
 if __name__ == '__main__':
-    print('Commencing Multiregression optimization...')
+    print('Commencing Multiregressor optimization...')
 
-    time_start = dt.datetime.now()
-    params_search = skopt.gp_minimize(      # bayesian optimization
+    #region Data handling
+    data = NSRDBlib.get_data(features)
+    X_train, y_train, X_valid, y_valid, _, _, _ = processlib.process(
+        data=data,
+        label=features_label,
+        shift=features_label_shift,
+        dropzeros=features_dropzeros,
+        labelscl=features_label_scale,
+        split_valid=valid_split,
+        split_test=test_split)
+    #endregion
+
+    #region Hyperparameter optimization
+    time_opt_start = dt.datetime.now()
+
+    params_search = skopt.gp_minimize(
         func=fitness,
         dimensions=params,
         acq_func='EI',
         n_calls=params_search_calls,
         x0=params_init
     )
-    time_end = dt.datetime.now()
-    time_elapsed = time_end - time_start
 
-    print('#########################################')
+    time_opt_end = dt.datetime.now()
+    time_opt_elapsed = time_opt_end - time_opt_start
+
+    print('#################################################')
+    print('')
     print('Multiregression optimization completed!')
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
-    print('Elapsed time: {}'.format(time_elapsed))
+    print('Elapsed time: ', time_opt_elapsed)
+    #endregion
 
-    print('Reading regressor output...')
-    read_regressor_attributes()
+    #region Figures
+    fig1, fig2, fig3 = figurelib.plot_opt_single(search=params_search, dim='learn_rate')
+
+    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    figurelib.save_fig(fig=fig1, name='convergence_plot.png', date=plot_date, id='multiregressor.py')
+    figurelib.save_fig(fig=fig2, name='objective_plot.png', date=plot_date, id='multiregressor.py')
+    figurelib.save_fig(fig=fig3, name='evaluations_plot.png', date=plot_date, id='multiregressor.py')
+
+    plt.show()
+    #endregion
+
+    #region Structure
+    print('Reading model weights...')
+
+    model = keras.models.load_model('./models/'+file_name+'/best/model.keras')
+
+    for layer in model.layers:
+        print(layer.get_config())
+        print(layer.get_weights())
+    #endregion

@@ -67,7 +67,7 @@ def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl):
     return X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl
 
 
-def process(data, label, shift, dropzeros, labelscl, split_valid, split_test, model, timesteps):
+def process(data, label, shift, dropzeros, labelscl, split_valid, split_test):
     '''
     Wrapper function for all processing steps.
     '''

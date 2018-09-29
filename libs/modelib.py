@@ -1,17 +1,30 @@
+import distutils
+import os
+import shutil
 import tensorflow as tf
 from tensorflow import keras
 
 
-def create_model_linear(learn_rate, n_features):        # WIP
+def create_model_linear(rate, inputs):
     model = keras.Sequential()
 
-    model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
-    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
+    model.add(keras.layers.Dense(
+        units=1,
+        activation='linear',
+        use_bias=True,
+        kernel_initializer='glorot_uniform',
+        bias_initializer='zeros',
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        input_shape=(inputs,),
+        name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+    opt = keras.optimizers.Adam(lr=rate)
 
-    return model
+    return model, opt
 
 
 def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):        # WIP
@@ -174,3 +187,83 @@ def create_model_GRU(rate, layers, nodes, act, droprate, inputs, outputs):
     opt = keras.optimizers.Adam(lr=rate)
     
     return model, opt
+
+
+def callbacks(log, id):
+    '''
+    Returns a list of configured keras callbacks.
+
+    Args:
+      log : name of individual log files
+      id : script name
+    '''
+    
+    if not os.path.exists('./logs/'+id+'/'):        # create logs dir
+        os.makedirs('./logs/'+id+'/')
+    
+    if not os.path.exists('./models/'+id+'/'):      # create models dir
+        os.makedirs('./models/'+id+'/')
+
+    callback_NaN = keras.callbacks.TerminateOnNaN()     # NaN callback
+
+    callback_checkpoint = keras.callbacks.ModelCheckpoint(      # checkpoint callback
+        filepath='./models/'+id+'/model.keras',
+        monitor='val_loss',
+        verbose=0,
+        save_best_only=True,
+        save_weights_only=False,
+        mode='auto',
+        period=1)
+    
+    callback_early_stopping = keras.callbacks.EarlyStopping(        # early stopping callback
+        monitor='val_loss',
+        min_delta=0,
+        patience=5,
+        verbose=1,
+        mode='auto',
+        baseline=None)
+
+    callback_tensorboard = keras.callbacks.TensorBoard(     # tensorboard callback
+        log_dir=log,
+        histogram_freq=5,
+        batch_size=32,
+        write_graph=True,
+        write_grads=True,
+        write_images=False)
+
+    callbacks = [callback_NaN, callback_checkpoint, callback_early_stopping, callback_tensorboard]
+
+    return callbacks
+
+
+def update_best_model(model, loss, log, id):
+    '''
+    Updates best model according to loss & deletes all other logs.
+
+    Args:
+      model : keras model
+      loss : validation loss
+      log : name of individual log file
+      id : script name
+    '''
+
+    if not os.path.exists('./models/'+id+'/best/'):        # create logs dir
+        os.makedirs('./models/'+id+'/best/')
+    
+    global loss_best
+    try:
+        loss_best
+    except NameError:
+        loss_best = loss
+
+    if loss <= loss_best:
+        print('New best!')
+        loss_best = loss
+
+        model.save('./models/'+id+'/best/model.keras')     # save best model to disk
+
+        for l in os.listdir('./logs/'+id+'/'):
+            if ('./logs/'+id+'/'+l+'/') != log:       # delete all but current prometheus_rnn log
+                shutil.rmtree('./logs/'+id+'/'+l+'/')
+    else:
+        shutil.rmtree(log)      # delete current log
