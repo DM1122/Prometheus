@@ -179,33 +179,6 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     return model, loss, log
 
 
-def test_model(model):
-    print('Testing model...')
-
-    #region Testing
-    y_pred = model.predict(x=X_test, batch_size=None, verbose=0, steps=None)        # predict using test data
- 
-    global y_test       # unscale datasets
-    y_test = y_scl.inverse_transform(y_test)
-    y_pred = y_scl.inverse_transform(y_pred)
-
-    if (features_log):
-        y_test = np.exp(y_test)
-        y_pred = np.exp(y_pred)
-    #endregion
-
-    #region Plots
-    fig = figurelib.plot_pred(lbl=y_test, out=y_pred, xlbl='Index', ylbl='DHI [W/$m^2$]')
-
-    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    figurelib.save_fig(fig=fig, name='output_plot.png', date=plot_date, id=file_name)
-
-    plt.show()
-    #endregion
-
-
-
-
 # def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=act, dropout=dropout):
 #     global X_train, y_train, X_test, y_test
 #     try:        # prevents data from being reprocessed every call
@@ -339,7 +312,5 @@ if __name__ == '__main__':
     print('Commencing Prometheus model generation...')
 
     model, _, _ = train_model()
-
-    test_model(model)
 
     print('Debug:\n$tensorboard --logdir=logs/'+file_name)
