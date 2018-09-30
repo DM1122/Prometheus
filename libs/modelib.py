@@ -237,7 +237,7 @@ def callbacks(log, id):
     return callbacks
 
 
-def update_best_model(model, loss, log, id):
+def update_best_model(model, loss, log, logdir, id):
     '''
     Updates best model according to loss & deletes all other logs.
 
@@ -245,10 +245,11 @@ def update_best_model(model, loss, log, id):
       model : keras model
       loss : validation loss
       log : name of individual log file
+      logdir : directory of stored logs
       id : script name
     '''
 
-    if not os.path.exists('./models/'+id+'/best/'):        # create logs dir
+    if not os.path.exists('./models/'+id+'/best/'):
         os.makedirs('./models/'+id+'/best/')
     
     global loss_best
@@ -263,11 +264,12 @@ def update_best_model(model, loss, log, id):
 
         model.save('./models/'+id+'/best/model.keras')     # save best model to disk
 
-        for l in os.listdir('./logs/'+id+'/'):
-            if ('./logs/'+id+'/'+l+'/') != log:       # delete all but current prometheus_rnn log
-                shutil.rmtree('./logs/'+id+'/'+l+'/')
+        for l in os.listdir(logdir):
+            if (logdir) != log:       # delete all but current log from logdir
+                shutil.rmtree(logdir+l+'/')
     else:
         shutil.rmtree(log)      # delete current log
+
 
 
 def batch_generator(x, y, batch_size, timesteps):
@@ -304,7 +306,7 @@ def batch_generator(x, y, batch_size, timesteps):
         yield (x_batch, y_batch)
 
 
-def calculate_loss_warmup(y_true, y_pred, warmup):     # WIP
+def calculate_loss_warmup(y_true, y_pred):     # WIP
     '''
     Calculate the MSE between y_true and y_pred,
     ignoring the beginning "warmup" part of the sequences.
@@ -315,8 +317,11 @@ def calculate_loss_warmup(y_true, y_pred, warmup):     # WIP
     Args:
       y_true : desired output
       y_pred : model output
-      warmup : length of sequence to ignore
+      warmup (internal) : length of sequence to ignore
     '''
+
+
+    warmup_length = 84
 
     # The shape of both input tensors are:
     # [batch_size, sequence_length, num_y_signals].

@@ -1,15 +1,15 @@
 import datetime as dt
-import distutils
-from distutils.dir_util import copy_tree
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
 import os
-import prometheus_rnn
-import shutil
 import skopt
 import tensorflow as tf
 from tensorflow import keras
+
+import libs
+from libs import figurelib, modelib, NSRDBlib, processlib
+import prometheus_rnn
 
 np.random.seed(123)
 tf.set_random_seed(123)
@@ -27,16 +27,18 @@ batch_space = skopt.space.Integer(low=1, high=256, name='batch_size')
 sequence_space = skopt.space.Integer(low=1, high=336, name='sequence_length')
 
 params = [learn_rate_space, layers_space, nodes_space, act_space, droprate_space, batch_space, sequence_space]
-params_init = [3e-5, 1, 8, 'tanh', 0.1, 128, 12]
+params_init = [3e-5, 1, 8, 'tanh', 0.0, 128, 12]
 #endregion
+
+file_name = os.path.basename(__file__)
 
 
 @skopt.utils.use_named_args(dimensions=params)
 def fitness(learn_rate, n_layers, n_nodes, act, droprate, batch_size, sequence_length):
 
-    model, fitness, log_dir = prometheus_rnn.train_model(learn_rate, n_layers, n_nodes, act, droprate, batch_size, sequence_length)
+    model, fitness, log = prometheus_rnn.train_model(learn_rate, n_layers, n_nodes, act, droprate, batch_size, sequence_length)
 
-    update_best_model(model, fitness, log_dir)
+    modelib.update_best_model(model=model, loss=fitness, log=log, logdir='./logs/prometheus_rnn.py/', id=file_name)
 
     del model
     keras.backend.clear_session()
@@ -44,55 +46,10 @@ def fitness(learn_rate, n_layers, n_nodes, act, droprate, batch_size, sequence_l
     return fitness
 
 
-def update_best_model(model, loss, log_dir):
-    global loss_best
-    try:        # will set best loss to current loss on first run
-        loss_best
-    except NameError:
-        loss_best = loss
-
-    if not os.path.exists('./models/epimetheus_rnn/'):
-        os.makedirs('./models/epimetheus_rnn/')
-    if not os.path.exists('./logs/epimetheus_rnn/'):
-        os.makedirs('./logs/epimetheus_rnn/')
-
-
-    if loss <= loss_best:
-        print('New best!')
-        loss_best = loss      # update best accuracy
-
-        model.save('./models/epimetheus_rnn/model.keras')     # save best model to disk
-
-        for log in os.listdir('./logs/prometheus_rnn/'):        
-            if ('./logs/prometheus_rnn/'+log+'/') == log_dir:
-                copy_tree('./logs/prometheus_rnn/'+log+'/', './logs/epimetheus_rnn/'+log+'/')       # copy log to epimetheus logbase
-
-            if ('./logs/prometheus_rnn/'+log+'/') != log_dir:       # delete all but current prometheus_rnn log
-                shutil.rmtree('./logs/prometheus_rnn/'+log+'/')
-    else:
-        shutil.rmtree(log_dir)      # delete current log
-
-
-def plot_results(search):
-    matplotlib.style.use('classic')
-
-    fig1 = skopt.plots.plot_convergence(search)
-    fig2, ax = skopt.plots.plot_objective(result=search, dimension_names=['learn_rate','n_layers','n_nodes','droprate','batch_size','sequence_length'])
-    fig3, ax = skopt.plots.plot_evaluations(result=search, dimension_names=['learn_rate','n_layers','n_nodes','droprate','batch_size','sequence_length'])
-
-    # Save plots to disk
-    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    plot_dir = './plots/epimetheus_rnn/'+plot_date+'/'
-    os.makedirs(plot_dir)
-    # fig1.savefig(plot_dir+'convergence_plot.png')      # does not work, must save manually!
-    fig2.savefig(plot_dir+'objective_plot.png')
-    fig3.savefig(plot_dir+'evaluations_plot.png')
-
-    plt.show()
-
 if __name__ == '__main__':
     print('Commencing Epimetheus hyperparameter optimization...')
 
+    #region Hyperparameter optimization
     time_start = dt.datetime.now()
 
     params_search = skopt.gp_minimize(      # bayesian optimization
@@ -112,4 +69,15 @@ if __name__ == '__main__':
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: ', time_elapsed)
-    plot_results(params_search)
+    #endregion
+
+    #region Plots
+    fig1, fig2, fig3 = figurelib.plot_opt(search=params_search, dims=['learn_rate', 'n_layers', 'n_nodes', 'droprate', 'batch_size', 'sequence_length'])
+
+    plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
+    figurelib.save_fig(fig=fig1, name='convergence_plot.png', date=plot_date, id=file_name)
+    figurelib.save_fig(fig=fig2, name='objective_plot.png', date=plot_date, id=file_name)
+    figurelib.save_fig(fig=fig3, name='evaluations_plot.png', date=plot_date, id=file_name)
+
+    plt.show()
+    #endregion

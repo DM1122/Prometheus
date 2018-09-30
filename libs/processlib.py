@@ -4,13 +4,23 @@ import sklearn
 from sklearn.preprocessing import MinMaxScaler
 
 
-def labeller(data, label, shift, dropzeros):
-
+def preprocessor(data, label, dropzeros, log):
     # Drop rows w/ zero in label col
     if (dropzeros):
         data[label].replace(0, pd.np.nan, inplace=True)
         data.dropna(axis=0, inplace=True)
+    
+    # Calculate log element-wise
+    if (log):
+        # data.loc[(data != 0).any(axis=1)].apply(np.log)
+        for col in data:
+            if ((data[col] != 0).all(axis=0)):
+                data[col] = data[col].apply(np.log)
+    
+    return data
 
+
+def labeller(data, label, shift):
     data['Label'] = data[label].shift(-shift)       # create label col
     data.dropna(inplace=True)       # drop gap created by shift length
     data_features = data.drop(columns='Label')      # create features df from all but labels col
@@ -51,7 +61,7 @@ def splitter(data_features, data_labels, split_valid, split_test):
     return X_train, y_train, X_valid, y_valid, X_test, y_test
 
 
-def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl):
+def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
     y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
 
@@ -59,26 +69,28 @@ def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl):
     X_valid = X_scl.transform(X_valid)
     X_test = X_scl.transform(X_test)
 
-    if (labelscl):
-        y_train = y_scl.transform(y_train)
-        y_valid = y_scl.transform(y_valid)
-        y_test = y_scl.transform(y_test)
+    y_train = y_scl.transform(y_train)
+    y_valid = y_scl.transform(y_valid)
+    y_test = y_scl.transform(y_test)
 
     return X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl
 
 
-def process(data, label, shift, dropzeros, labelscl, split_valid, split_test):
+def process(data, label, shift, dropzeros, log, split_valid, split_test):
     '''
     Wrapper function for all processing steps.
     '''
-    
+
+    # Preproc
+    data = preprocessor(data, label, dropzeros, log)
+
     # Label
-    data_features, data_labels = labeller(data, label, shift, dropzeros)
+    data_features, data_labels = labeller(data, label, shift)
 
     # Split
     X_train, y_train, X_valid, y_valid, X_test, y_test = splitter(data_features, data_labels, split_valid, split_test)
 
     # Normalize
-    X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl = normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test, labelscl)
+    X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl = normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test)
     
     return X_train, y_train, X_valid, y_valid, X_test, y_test, y_scl

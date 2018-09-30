@@ -1,6 +1,4 @@
 import datetime as dt
-import libs
-from libs import figurelib, modelib, NSRDBlib, processlib
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
@@ -8,21 +6,24 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 
+import libs
+from libs import figurelib, modelib, NSRDBlib, processlib
+
 np.random.seed(123)
 tf.set_random_seed(123)
 
 #region Hyperparams
-model_type = 'GRU'      # RNN/LSTM/GRU
-n_epochs = 100
+model_type = 'RNN'      # RNN/LSTM/GRU
+n_epochs = 25
 n_epoch_steps = 8
 learn_rate = 0.001
 n_layers = 1
-n_nodes = 512
+n_nodes = 16
 activation = 'tanh'
 dropout_rate = 0.0
 batch_size = 256
-sequence_length = 672       # one month in hrs (assuming 12h day)
-warmup_length = 672
+sequence_length = 336
+warmup_length = 84         # must also be declared and equal with modelib
 
 features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
     'ghi_clear',
@@ -48,8 +49,8 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
 ]
 features_label = 'dhi'
 features_label_shift = 12       # hours
-features_label_scale = True
 features_dropzeros = True       # whether to drop all rows in data for which label is 0
+features_log = False
 
 valid_split = 0.2
 test_split = 0.2
@@ -80,7 +81,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
             label=features_label,
             shift=features_label_shift,
             dropzeros=features_dropzeros,
-            labelscl=features_label_scale,
+            log=features_log,
             split_valid=valid_split,
             split_test=test_split)
     #endregion
@@ -95,7 +96,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     else:
         raise ValueError('Invalid model type: {}'.format(model_type))
     
-    model.compile(optimizer=opt, loss=calculate_loss, metrics=['mae'])
+    model.compile(optimizer=opt, loss=modelib.calculate_loss_warmup, metrics=['mae'])
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
     log_dir = './logs/'+file_name+'/{0}_{1}_rate({2})_act({3})_layers({4})_nodes({5})_drop({6})_batch({7})_seq({8})/'.format(
@@ -171,15 +172,21 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 
 def test_model(model):
     print('Testing model...')
+
+    #region Testing
     y_pred = model.predict(x=np.expand_dims(X_test, axis=0), batch_size=None, verbose=0, steps=None)        # predict using test data
     y_pred = y_pred.reshape(y_pred.shape[1],1)
+ 
+    global y_test       # unscale datasets
+    y_test = y_scl.inverse_transform(y_test)
+    y_pred = y_scl.inverse_transform(y_pred)
 
-    if (features_label_scale):      # unscale datasets
-        global y_test
-        y_test = y_scl.inverse_transform(y_test)
-        y_pred = y_scl.inverse_transform(y_pred)
+    if (features_log):
+        y_test = np.exp(y_test)
+        y_pred = np.exp(y_pred)
+    #endregion
 
-    #region Figures
+    #region Plots
     fig = figurelib.plot_pred_warmup(lbl=y_test, out=y_pred, warmup=warmup_length, xlbl='Index', ylbl='DHI [W/$m^2$]')
 
     plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')

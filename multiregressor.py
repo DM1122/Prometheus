@@ -1,6 +1,4 @@
 import datetime as dt
-import libs
-from libs import figurelib, modelib, NSRDBlib, processlib
 import matplotlib
 from matplotlib import pyplot as plt
 import numpy as np
@@ -8,6 +6,9 @@ import os
 import skopt
 import tensorflow as tf
 from tensorflow import keras
+
+import libs
+from libs import figurelib, modelib, NSRDBlib, processlib
 
 np.random.seed(123)
 tf.set_random_seed(123)
@@ -55,8 +56,8 @@ features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/hu
 ]
 features_label = 'dhi'
 features_label_shift = 12
-features_label_scale = False
 features_dropzeros = True
+features_log = False
 
 valid_split = 0.2
 test_split = 0.2
@@ -78,8 +79,8 @@ def fitness(learn_rate):
     regressor.compile(optimizer=opt, loss='mse', metrics=['mae'])
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/'+file_name+'/{0}_rate({1})/'.format(log_date, learn_rate)
-    callbacks = modelib.callbacks(log=log_dir, id=file_name)
+    log = './logs/'+file_name+'/{0}_rate({1})/'.format(log_date, learn_rate)
+    callbacks = modelib.callbacks(log=log, id=file_name)
     #endregion
 
     #region Training
@@ -127,7 +128,7 @@ def fitness(learn_rate):
     print('Elapsed time: ', time_elapsed)
     print('Search {0}/{1}'.format(call_count, params_search_calls))
 
-    modelib.update_best_model(model=regressor, loss=loss, log=log_dir, id=file_name)
+    modelib.update_best_model(model=regressor, loss=loss, log=log, logdir='./logs/'+file_name+'/', id=file_name)
     #endregion
 
     del regressor
@@ -141,12 +142,13 @@ if __name__ == '__main__':
 
     #region Data handling
     data = NSRDBlib.get_data(features)
+
     X_train, y_train, X_valid, y_valid, _, _, _ = processlib.process(
         data=data,
         label=features_label,
         shift=features_label_shift,
         dropzeros=features_dropzeros,
-        labelscl=features_label_scale,
+        log=features_log,
         split_valid=valid_split,
         split_test=test_split)
     #endregion
@@ -173,7 +175,7 @@ if __name__ == '__main__':
     print('Elapsed time: ', time_opt_elapsed)
     #endregion
 
-    #region Figures
+    #region Plots
     fig1, fig2, fig3 = figurelib.plot_opt_single(search=params_search, dim='learn_rate')
 
     plot_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
