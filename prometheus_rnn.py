@@ -14,7 +14,7 @@ tf.set_random_seed(123)
 
 #region Hyperparams
 model_type = 'RNN'      # RNN/LSTM/GRU
-n_epochs = 25
+n_epochs = 100
 n_epoch_steps = 8
 learn_rate = 0.001
 n_layers = 1
@@ -99,7 +99,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     model.compile(optimizer=opt, loss=modelib.calculate_loss_warmup, metrics=['mae'])
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
-    log_dir = './logs/'+file_name+'/{0}_{1}_rate({2})_act({3})_layers({4})_nodes({5})_drop({6})_batch({7})_seq({8})/'.format(
+    log = './logs/'+file_name+'/{0}_{1}_rate({2})_act({3})_layers({4})_nodes({5})_drop({6})_batch({7})_seq({8})/'.format(
         log_date,
         model_type,
         learn_rate,
@@ -109,7 +109,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         dropout_rate,
         batch_size,
         sequence_length)
-    callbacks = modelib.callbacks(log=log_dir, id=file_name)
+    callbacks = modelib.callbacks(log=log, id=file_name)
     #endregion
 
     #region Training
@@ -125,7 +125,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('batch size: ', batch_size)
     print('sequence length: ', sequence_length)
 
-    batchgen = modelib.batch_generator(x=X_train, y=y_train, batch_size=batch_size, timesteps=sequence_length)      # create batch generator (X_batch, y_batch = next(batchgen))
+    batchgen = modelib.batch_generator_seq(x=X_train, y=y_train, batch_size=batch_size, timesteps=sequence_length)      # create batch generator (X_batch, y_batch = next(batchgen))
 
     time_start = dt.datetime.now()
 
@@ -167,7 +167,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         print('Search {0}/{1}'.format(call_count, params_search_calls))
     #endregion
 
-    return model, loss, log_dir
+    return model, loss, log
 
 
 def test_model(model):

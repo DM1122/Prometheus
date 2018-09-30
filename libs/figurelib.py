@@ -68,6 +68,26 @@ def plot_opt_single(search, dim):
     return fig1, fig2, fig3
 
 
+def plot_pred(lbl, out, xlbl, ylbl):
+    
+    matplotlib.style.use('classic')
+
+    # Create figure
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.set_xlabel(xlbl)
+    ax.set_ylabel(ylbl)
+    
+    # Plot and compare two signals
+    plt.plot(lbl, label='Label')
+    plt.plot(out, label='Output')
+
+    fig.tight_layout()
+    plt.legend()
+
+    return fig
+
+
 def plot_pred_warmup(lbl, out, warmup, xlbl, ylbl):
     
     matplotlib.style.use('classic')

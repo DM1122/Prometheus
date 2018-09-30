@@ -28,28 +28,38 @@ def create_model_linear(rate, inputs):
     return model, opt
 
 
-def create_model_dense(learn_rate, n_layers, n_nodes, act, n_features, dropout):        # WIP
+def create_model_MLP(rate, layers, nodes, act, droprate, inputs, outputs):
     model = keras.Sequential()
     
-    # model.add(keras.layers.InputLayer(input_shape=(n_features, ), name='Input'))
+    nodes_per_layer = nodes // layers
 
-    for i in range(n_layers):
+    model.add(keras.layers.Dense(
+        units=nodes_per_layer,
+        activation=act,
+        input_shape=(inputs,),
+        name='MLP_0'))
+    model.add(keras.layers.Dropout(rate, noise_shape=None, seed=None))
+
+    for i in range(layers-1):
         model.add(keras.layers.Dense(
-            units=n_nodes,
+            units=nodes_per_layer,
             activation=act,
+            use_bias=True,
             kernel_initializer='glorot_uniform',
             bias_initializer='zeros',
-            #kernel_regularizer=keras.regularizers.l2(l=0.00001),
-            name='Dense_{}'.format(i+1)))
-        
-        model.add(keras.layers.Dropout(dropout))
+            kernel_regularizer=None,
+            bias_regularizer=None,
+            activity_regularizer=None,
+            kernel_constraint=None,
+            bias_constraint=None,
+            name='MLP_{}'.format(i+1)))
+        model.add(keras.layers.Dropout(rate, noise_shape=None, seed=None))
     
-    model.add(keras.layers.Dense(units=1, activation='linear', name='Output'))
+    model.add(keras.layers.Dense(units=outputs, activation='linear', name='Output'))
 
-    optimizer = keras.optimizers.Adam(lr=learn_rate)
-    model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
+    opt = keras.optimizers.Adam(lr=rate)
 
-    return model
+    return model, opt
 
 
 def create_model_RNN(rate, layers, nodes, act, droprate, inputs, outputs):
@@ -271,10 +281,42 @@ def update_best_model(model, loss, log, logdir, id):
         shutil.rmtree(log)      # delete current log
 
 
-
-def batch_generator(x, y, batch_size, timesteps):
+def batch_generator(x, y, batch_size):
     '''
     Generator function for creating random batches of data.
+
+    Author: Hvass-Labs
+    Modifier: DM1122
+
+    Args:
+      x : feature dataset
+      y : label dataset
+      batch_size : number of samples
+    '''
+
+    # Infinite loop
+    while True:
+        # Allocate new empty array for batch of input signals
+        x_batch = np.zeros(shape=(batch_size, x.shape[1]))
+
+        # Allocate new empty array for batch of output signals
+        y_batch = np.zeros(shape=(batch_size, y.shape[1]))
+
+        # Fill batch arrays with data
+        for i in range(batch_size):
+            # Get random start index
+            idx = np.random.randint(x.shape[0] - batch_size)
+            
+            # Copy the sequences of data starting at idx
+            x_batch = x[idx:idx+batch_size]
+            y_batch = y[idx:idx+batch_size]
+        
+        yield (x_batch, y_batch)
+
+
+def batch_generator_seq(x, y, batch_size, timesteps):
+    '''
+    Generator function for creating random batches of sequential data.
 
     Author: Hvass-Labs
     Modifier: DM1122
