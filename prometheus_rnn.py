@@ -25,17 +25,22 @@ batch_size = 256
 sequence_length = 336
 warmup_length = 84         # must also be declared and equal with modelib
 
-features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
+features = [
     'ghi_clear',
     'dhi_clear',
     'dew_point',
     'precipitation',
     'dhi',
     'temp',
-    'ghi',
-    'dni_clear',
+    # 'ghi',
+    # 'dni_clear',
     'zenith_angle',
-    'dni',    
+    # 'dni',
+    # 'pressure',
+    'humidity_rel',
+    'albedo_sur',
+    # 'wind_speed',
+    # 'wind_dir',
     'cloud_type_0.0',
     'cloud_type_1.0',
     'cloud_type_2.0',
