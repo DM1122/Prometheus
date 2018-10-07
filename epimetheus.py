@@ -16,7 +16,7 @@ tf.set_random_seed(123)
 
 
 #region Metaparams
-params_search_calls = 11
+params_search_calls = 1000
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
@@ -26,7 +26,7 @@ droprate_space = skopt.space.Real(low=0, high=0.5, name='droprate')
 batch_space = skopt.space.Integer(low=1, high=256, name='batch_size')
 
 params = [learn_rate_space, layers_space, nodes_space, act_space, droprate_space, batch_space]
-params_init = [3e-5, 1, 8, 'relu', 0.0, 128]
+params_init = [1e-3, 1, 8, 'relu', 0.0, 128]
 #endregion
 
 file_name = os.path.basename(__file__)
