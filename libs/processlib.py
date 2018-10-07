@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sklearn
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 
 def preprocessor(data, label, dropzeros, log):
@@ -64,6 +65,9 @@ def splitter(data_features, data_labels, split_valid, split_test):
 def normalizer(X_train, y_train, X_valid, y_valid, X_test, y_test):
     X_scl = MinMaxScaler(feature_range=(0, 1)).fit(X_train)
     y_scl = MinMaxScaler(feature_range=(0, 1)).fit(y_train)
+
+    # X_scl = StandardScaler(copy=True, with_mean=True, with_std=True).fit(X_train)       # WIP: need to account for one-hot encoded
+    # y_scl = StandardScaler(copy=True, with_mean=True, with_std=True).fit(y_train)
 
     X_train = X_scl.transform(X_train)
     X_valid = X_scl.transform(X_valid)

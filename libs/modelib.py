@@ -275,7 +275,7 @@ def update_best_model(model, loss, log, logdir, id):
         model.save('./models/'+id+'/best/model.keras')     # save best model to disk
 
         for l in os.listdir(logdir):
-            if (logdir) != log:       # delete all but current log from logdir
+            if (logdir+l+'/') != log:       # delete all but current log from logdir
                 shutil.rmtree(logdir+l+'/')
     else:
         shutil.rmtree(log)      # delete current log

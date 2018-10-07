@@ -27,7 +27,7 @@ params_init = [1e-3]
 n_epochs = 100
 batch_size = 256
 
-features = [       # temp/dhi_clear/dni_clear/ghi_clear/dew_point/dhi/dni/ghi/humidity_rel/zenith_angle/albedo_sur/pressure/precipitation/wind_dir/win_speed/cloud_type_(0-10).0 (exclude 5)
+features = [
     'ghi_clear',
     'dhi_clear',
     'dew_point',
@@ -195,3 +195,5 @@ if __name__ == '__main__':
         print(layer.get_config())
         print(layer.get_weights())
     #endregion
+
+    print('Debug:\n$tensorboard --logdir=logs/'+file_name)

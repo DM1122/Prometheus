@@ -49,8 +49,8 @@ features = [       # selected features must match those model trained with
     'cloud_type_10.0'
 ]
 features_label = 'dhi'
-features_label_shift = 12       # hours
-features_dropzeros = True       # whether to drop all rows in data for which label is 0
+features_label_shift = 12
+features_dropzeros = True
 features_log = False
 
 valid_split = 0.2
@@ -61,6 +61,14 @@ file_name = os.path.basename(__file__)
 
 
 def test_model(model, x, y):
+    result = model.evaluate(x=x, y=y, batch_size=None, verbose=0, sample_weight=None, steps=None)
+
+    for metric, val in zip(model.metrics_names, result):
+        if metric == 'loss':
+            loss = val
+
+    print('Testing loss: ', loss)
+
     y_pred = model.predict(x=x, batch_size=None, verbose=0, steps=None)
 
     y = y_scl.inverse_transform(y)
