@@ -20,7 +20,7 @@ params_search_calls = 1000
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
-nodes_space = skopt.space.Integer(low=2, high=256, name='n_nodes')
+nodes_space = skopt.space.Integer(low=4, high=256, name='n_nodes')
 act_space = skopt.space.Categorical(categories=['relu'], name='act')
 droprate_space = skopt.space.Real(low=0, high=0.5, name='droprate')
 batch_space = skopt.space.Integer(low=1, high=256, name='batch_size')
