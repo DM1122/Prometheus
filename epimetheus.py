@@ -68,6 +68,12 @@ if __name__ == '__main__':
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: ', time_elapsed)
+    modelib.log_search(
+        search=params_search.space.point_to_dict(params_search.x),
+        score=params_search.fun,
+        time=time_elapsed,
+        date=dt.datetime.now().strftime('%Y%m%d-%H%M%S'),
+        id=file_name)
     #endregion
 
     #region Plots

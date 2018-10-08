@@ -395,3 +395,25 @@ def calculate_loss_warmup(y_true, y_pred):     # WIP
     loss_warmup = tf.reduce_mean(loss)
 
     return loss_warmup
+
+def log_search(search, score, time, date, id):
+    '''
+    Logs hyperparameter search results to .txt file.
+
+    Args:
+      search : parameter search dict
+      score : search fitness
+      time : elapsed search time
+      date : formatted timestamp
+      id : script name
+    '''
+
+    if not os.path.exists('./logs/'+id+'/'):
+        os.makedirs('./logs/'+id+'/')
+
+    with open(file='./logs/'+id+'/'+date+'.txt', mode='w') as txt:
+        txt.write('Hyperparameter optimization log:\n')
+        txt.write('--------------------------------\n')
+        txt.write('Results: {}\n'.format(search))
+        txt.write('Fitness: {}\n'.format(score))
+        txt.write('Elapsed time: {}\n'.format(time))

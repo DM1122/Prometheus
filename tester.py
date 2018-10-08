@@ -21,22 +21,22 @@ plot_label_y = 'DHI [W/$m^2$]'
 
 warmup_length = 84
 
-features = [       # selected features must match those model trained with
+features = [
     'ghi_clear',
     'dhi_clear',
     'dew_point',
     'precipitation',
     'dhi',
     'temp',
-    'ghi',
-    'dni_clear',
+    # 'ghi',
+    # 'dni_clear',
     'zenith_angle',
-    'dni',
-    'pressure',
+    # 'dni',
+    # 'pressure',
     'humidity_rel',
     'albedo_sur',
-    'wind_speed',
-    'wind_dir',
+    # 'wind_speed',
+    # 'wind_dir',
     'cloud_type_0.0',
     'cloud_type_1.0',
     'cloud_type_2.0',

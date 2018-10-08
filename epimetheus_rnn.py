@@ -16,7 +16,7 @@ tf.set_random_seed(123)
 
 
 #region Metaparams
-params_search_calls = 100
+params_search_calls = 11
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
@@ -69,6 +69,12 @@ if __name__ == '__main__':
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: ', time_elapsed)
+    modelib.log_search(
+        search=params_search.space.point_to_dict(params_search.x),
+        score=params_search.fun,
+        time=time_elapsed,
+        date=dt.datetime.now().strftime('%Y%m%d-%H%M%S'),
+        id=file_name)
     #endregion
 
     #region Plots
@@ -81,3 +87,4 @@ if __name__ == '__main__':
 
     plt.show()
     #endregion
+

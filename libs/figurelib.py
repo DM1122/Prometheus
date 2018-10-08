@@ -10,7 +10,7 @@ def save_fig(fig, name, date, id):
     Args:
       fig : matplotlib figure
       name : name of figure
-      date : formated timestamp
+      date : formatted timestamp
       id : script name
     '''
 

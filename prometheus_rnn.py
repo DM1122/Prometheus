@@ -14,7 +14,7 @@ tf.set_random_seed(123)
 
 #region Hyperparams
 model_type = 'RNN'      # RNN/LSTM/GRU
-n_epochs = 100
+n_epochs = 1
 n_epoch_steps = 8
 learn_rate = 0.001
 n_layers = 1

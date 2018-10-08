@@ -16,7 +16,7 @@ tf.set_random_seed(123)
 #region Hyperparams
 model_type = 'MLP'      # MLP
 n_epochs = 100
-n_epoch_steps = 64
+#n_epoch_steps = 64
 learn_rate = 0.001
 n_layers = 1
 n_nodes = 16
@@ -187,6 +187,6 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
 if __name__ == '__main__':
     print('Commencing Prometheus model generation...')
 
-    model, _, _ = train_model()
+    train_model()
 
     print('Debug:\n$tensorboard --logdir=logs/'+file_name)
