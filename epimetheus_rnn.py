@@ -16,7 +16,7 @@ tf.set_random_seed(123)
 
 
 #region Metaparams
-params_search_calls = 1000
+params_search_calls = 100
 
 learn_rate_space = skopt.space.Real(low=1e-6, high=1e-2, prior='log-uniform', name='learn_rate')
 layers_space = skopt.space.Integer(low=1, high=3, name='n_layers')
