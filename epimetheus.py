@@ -8,7 +8,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 import libs
-from libs import figurelib, modelib, NSRDBlib, processlib
+from libs import figurelib, NNlib, NSRDBlib, processlib
 import prometheus
 
 np.random.seed(123)
@@ -37,7 +37,7 @@ def fitness(learn_rate, n_layers, n_nodes, act, droprate, batch_size):
 
     model, fitness, log = prometheus.train_model(learn_rate, n_layers, n_nodes, act, droprate, batch_size)
 
-    modelib.update_best_model(model=model, loss=fitness, log=log, logdir='./logs/prometheus.py/', id=file_name)
+    NNlib.update_best_model(model=model, loss=fitness, log=log, logdir='./logs/prometheus.py/', id=file_name)
 
     del model
     keras.backend.clear_session()
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     print('Results: ', params_search.space.point_to_dict(params_search.x))
     print('Fitness: ', params_search.fun)
     print('Elapsed time: ', time_elapsed)
-    modelib.log_search(
+    NNlib.log_search(
         search=params_search.space.point_to_dict(params_search.x),
         score=params_search.fun,
         time=time_elapsed,

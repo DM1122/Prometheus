@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 import libs
-from libs import figurelib, modelib, NSRDBlib, processlib
+from libs import figurelib, modelib, NNlib, NSRDBlib, processlib
 
 np.random.seed(123)
 tf.set_random_seed(123)
@@ -23,7 +23,7 @@ activation = 'tanh'
 dropout_rate = 0.0
 batch_size = 256
 sequence_length = 336
-warmup_length = 84         # must also be declared and equal with modelib
+warmup_length = 84         # must also be declared and equal within NNlib
 
 features = [
     'ghi_clear',
@@ -101,7 +101,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     else:
         raise ValueError('Invalid model type: {}'.format(model_type))
     
-    model.compile(optimizer=opt, loss=modelib.calculate_loss_warmup, metrics=['mae'])
+    model.compile(optimizer=opt, loss=NNlib.calculate_loss_warmup, metrics=['mae'])
 
     log_date = dt.datetime.now().strftime('%Y%m%d-%H%M%S')
     log = './logs/'+file_name+'/{0}_{1}_rate({2})_act({3})_layers({4})_nodes({5})_drop({6})_batch({7})_seq({8})/'.format(
@@ -114,7 +114,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         dropout_rate,
         batch_size,
         sequence_length)
-    callbacks = modelib.callbacks(log=log, id=file_name)
+    callbacks = NNlib.callbacks(log=log, id=file_name)
     #endregion
 
     #region Training
@@ -130,7 +130,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
     print('batch size: ', batch_size)
     print('sequence length: ', sequence_length)
 
-    batchgen = modelib.batch_generator_seq(x=X_train, y=y_train, batch_size=batch_size, timesteps=sequence_length)      # create batch generator (X_batch, y_batch = next(batchgen))
+    batchgen = NNlib.batch_generator_seq(x=X_train, y=y_train, batch_size=batch_size, timesteps=sequence_length)      # create batch generator (X_batch, y_batch = next(batchgen))
 
     time_start = dt.datetime.now()
 

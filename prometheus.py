@@ -7,7 +7,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 import libs
-from libs import figurelib, modelib, NSRDBlib, processlib
+from libs import figurelib, modelib, NNlib, NSRDBlib, processlib
 
 np.random.seed(123)
 tf.set_random_seed(123)
@@ -108,7 +108,7 @@ def train_model(learn_rate=learn_rate, n_layers=n_layers, n_nodes=n_nodes, act=a
         n_nodes,
         dropout_rate,
         batch_size)
-    callbacks = modelib.callbacks(log=log, id=file_name)
+    callbacks = NNlib.callbacks(log=log, id=file_name)
     #endregion
 
     #region Training
